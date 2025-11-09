@@ -13,7 +13,7 @@ public final class DBGameSystem: Model, @unchecked Sendable {
 
     public init(
         id: UUID? = nil,
-        name: String
+        name: String,
     ) {
         self.id = id
         self.name = name
