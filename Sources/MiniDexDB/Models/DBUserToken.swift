@@ -18,7 +18,7 @@ public final class DBUserToken: Model, @unchecked Sendable {
     public var type: UserTokenType
 
     @Field(key: "value")
-    public var value: String
+    public var value: Data
 
     @Field(key: "expires_at")
     public var expiresAt: Date
@@ -35,7 +35,7 @@ public final class DBUserToken: Model, @unchecked Sendable {
         id: UUID? = nil,
         userID: UUID,
         type: UserTokenType,
-        value: String,
+        value: Data,
         expiresAt: Date,
         isRevoked: Bool = false,
     ) {

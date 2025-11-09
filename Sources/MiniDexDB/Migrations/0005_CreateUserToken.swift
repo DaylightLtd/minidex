@@ -13,7 +13,7 @@ struct Migration_0005_CreateUserToken: AsyncMigration {
             .id()
             .field("user_id", .uuid, .required, .references("users", "id"))
             .field("type", tokenType, .required)
-            .field("value", .string, .required)
+            .field("value", .data, .required)
             .field("expires_at", .datetime, .required)
             .field("created_at", .datetime, .required)
             .field("is_revoked", .bool, .required)

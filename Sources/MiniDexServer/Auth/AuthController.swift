@@ -32,16 +32,21 @@ struct AuthController: RouteCollection {
     @Sendable
     func login(req: Request) async throws -> LoginUser {
         let user = try req.auth.require(User.self)
+
+        let tokenValue = generateToken(length: Settings.Auth.tokenLength)
+        let expiresAt = Date() + Settings.Auth.accessTokenExpiration
+
         let token = DBUserToken(
             userID: user.id,
             type: .access,
-            value: generateToken(length: Settings.Auth.tokenLength),
-            expiresAt: Date() + Settings.Auth.accessTokenExpiration
+            value: Data(SHA256.hash(data: tokenValue)),
+            expiresAt: expiresAt
         )
         try await token.save(on: req.db)
+
         return .init(
             user: user,
-            accessToken: token.value,
+            accessToken: tokenValue.base64URLEncodedString(),
             expiresIn: Int(token.expiresAt.timeIntervalSinceNow)
         )
     }
@@ -80,15 +85,12 @@ struct AuthController: RouteCollection {
         return .created
     }
 
-    private func generateToken(length: Int) -> String {
+    private func generateToken(length: Int) -> Data {
         var bytes = [UInt8](repeating: 0, count: length)
         var rng = SystemRandomNumberGenerator()
         for i in 0..<length {
             bytes[i] = UInt8.random(in: 0...255, using: &rng)
         }
-        return Data(bytes).base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
+        return Data(bytes)
     }
 }

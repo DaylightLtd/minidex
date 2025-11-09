@@ -23,10 +23,14 @@ struct GameSystemController: RouteCollection {
 
 
     func boot(routes: any RoutesBuilder) throws {
-        let group = routes.grouped("api", "gamesystem")
-        group.get(use: crud.index)
-        group.post(use: crud.create)
-        group.group(":id") { route in
+        let root = routes
+            .grouped("api", "gamesystem")
+            .grouped(TokenAuthenticator())
+            .grouped(User.guardMiddleware())
+
+        root.get(use: crud.index)
+        root.post(use: crud.create)
+        root.group(":id") { route in
             route.get(use: crud.get)
             route.patch(use: crud.update { dbModel, patch in
                 if let name = patch.name {
