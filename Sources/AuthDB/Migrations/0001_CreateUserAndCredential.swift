@@ -1,7 +1,7 @@
 import Fluent
 import SQLKit
 
-struct Migration_0004_CreateUserAndCredential: AsyncMigration {
+struct Migration_0001_CreateUserAndCredential: AsyncMigration {
     func prepare(on database: any Database) async throws {
         try await database
             .schema("users")

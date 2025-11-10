@@ -1,7 +1,7 @@
 import Fluent
 import SQLKit
 
-struct Migration_0005_CreateUserToken: AsyncMigration {
+struct Migration_0002_CreateUserToken: AsyncMigration {
     func prepare(on database: any Database) async throws {
         let tokenType = try await database
             .enum("user_token_type")

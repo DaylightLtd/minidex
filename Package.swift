@@ -7,6 +7,7 @@ let package = Package(
        .macOS(.v13)
     ],
     products: [
+        .library(name: "AuthDB", targets: ["AuthDB"]),
         .library(name: "MiniDexDB", targets: ["MiniDexDB"]),
     ],
     dependencies: [
@@ -23,15 +24,23 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "AuthDB",
+            dependencies: [
+                .product(name: "Fluent", package: "fluent"),
+            ],
+            swiftSettings: swiftSettings,
+        ),
+        .target(
             name: "MiniDexDB",
             dependencies: [
                 .product(name: "Fluent", package: "fluent"),
             ],
-            swiftSettings: swiftSettings
+            swiftSettings: swiftSettings,
         ),
         .executableTarget(
             name: "MiniDexServer",
             dependencies: [
+                .target(name: "AuthDB"),
                 .target(name: "MiniDexDB"),
                 .product(name: "Fluent", package: "fluent"),
                 .product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
@@ -40,7 +49,7 @@ let package = Package(
                 .product(name: "NIOCore", package: "swift-nio"),
                 .product(name: "NIOPosix", package: "swift-nio"),
             ],
-            swiftSettings: swiftSettings
+            swiftSettings: swiftSettings,
         ),
         .testTarget(
             name: "MiniDexServerTests",
@@ -48,7 +57,7 @@ let package = Package(
                 .target(name: "MiniDexServer"),
                 .product(name: "VaporTesting", package: "vapor"),
             ],
-            swiftSettings: swiftSettings
+            swiftSettings: swiftSettings,
         )
     ]
 )

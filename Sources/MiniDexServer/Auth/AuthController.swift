@@ -1,5 +1,5 @@
+import AuthDB
 import Fluent
-import MiniDexDB
 import Vapor
 
 struct LoginUser: Content {

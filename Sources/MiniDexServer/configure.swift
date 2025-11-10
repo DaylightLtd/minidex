@@ -1,8 +1,9 @@
-import MiniDexDB
-import NIOSSL
+import AuthDB
 import Fluent
 import FluentPostgresDriver
 import Leaf
+import MiniDexDB
+import NIOSSL
 import Vapor
 
 // configures your application
@@ -26,7 +27,8 @@ public func configure(_ app: Application) async throws {
         as: .psql
     )
 
-    app.migrations.add(Migrations.all)
+    app.migrations.add(AuthDB.migrations)
+    app.migrations.add(MiniDexDB.migrations)
 
     app.views.use(.leaf)
 
