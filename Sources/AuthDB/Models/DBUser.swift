@@ -10,6 +10,12 @@ public final class DBUser: Model, @unchecked Sendable {
     @OptionalField(key: "display_name")
     public var displayName: String?
 
+    @Field(key: "roles")
+    public var roles: UInt
+
+    @Field(key: "is_active")
+    public var isActive: Bool
+
     @Timestamp(key: "created_at", on: .create)
     public var createdAt: Date?
 
@@ -23,10 +29,14 @@ public final class DBUser: Model, @unchecked Sendable {
 
     public init(
         id: UUID? = nil,
-        displayName: String? = nil
+        displayName: String? = nil,
+        roles: UInt = 0,
+        isActive: Bool = false,
     ) {
         self.id = id
         self.displayName = displayName
+        self.roles = roles
+        self.isActive = isActive
     }
 }
 

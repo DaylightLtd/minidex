@@ -26,6 +26,8 @@ public struct TokenAuthenticator: AsyncBearerAuthenticator {
             let user = try User(
                 id: dbUser.requireID(),
                 displayName: dbUser.displayName,
+                roles: .init(rawValue: dbUser.roles),
+                isActive: dbUser.isActive,
             )
             request.auth.login(user)
         }

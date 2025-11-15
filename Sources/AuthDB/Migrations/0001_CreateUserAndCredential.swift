@@ -7,6 +7,8 @@ struct Migration_0001_CreateUserAndCredential: AsyncMigration {
             .schema("users")
             .id()
             .field("display_name", .string)
+            .field("roles", .uint, .required)
+            .field("is_active", .bool, .required)
             .field("created_at", .datetime, .required)
             .field("updated_at", .datetime, .required)
             .create()

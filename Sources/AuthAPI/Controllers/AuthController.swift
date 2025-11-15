@@ -2,7 +2,7 @@ import AuthDB
 import Fluent
 import Vapor
 
-struct LoginIn: Content {
+struct LoginOut: Content {
     var user: User
     var accessToken: String
     var expiresIn: Int
@@ -12,7 +12,6 @@ struct RegisterIn: Content, Validatable {
     var username: String
     var password: String
     var confirmPassword: String
-    var displayName: String?
 
     static func validations(_ validations: inout Validations) {
         validations.add("username", as: String.self, is: .count(3...))
@@ -38,8 +37,15 @@ public struct AuthController: RouteCollection, Sendable {
     }
 
     @Sendable
-    func login(req: Request) async throws -> LoginIn {
+    func login(req: Request) async throws -> LoginOut {
         let user = try req.auth.require(User.self)
+
+        if !user.isActive {
+            throw Abort(.forbidden, reason: "User is not active")
+        }
+        if user.roles.isEmpty {
+            throw Abort(.forbidden, reason: "User not authorized to perform this action")
+        }
 
         let tokenValue = generateToken(length: tokenLength)
         let expiresAt = Date() + accessTokenExpiration
@@ -78,7 +84,7 @@ public struct AuthController: RouteCollection, Sendable {
         }
 
         try await req.db.transaction { db in
-            let user = DBUser(displayName: input.displayName)
+            let user = DBUser()
             try await user.save(on: db)
 
             let credential = DBCredential(
