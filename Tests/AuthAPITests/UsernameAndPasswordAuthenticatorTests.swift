@@ -4,6 +4,7 @@ import Fluent
 import Testing
 import Vapor
 import VaporTesting
+import VaporUtils
 
 @Suite("UsernameAndPasswordAuthenticator", .serialized)
 struct UsernameAndPasswordAuthenticatorTests {
@@ -47,7 +48,7 @@ struct UsernameAndPasswordAuthenticatorTests {
 }
 
 private func withApp(_ test: @escaping (Application) async throws -> Void) async throws {
-    let app = try await Application.make(.testing)
+    let app = try await Application.makeTesting()
     try await TestDatabaseHelpers.migrate(app)
     do {
         try await test(app)

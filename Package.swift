@@ -96,10 +96,28 @@ let package = Package(
             swiftSettings: swiftSettings,
         ),
         .testTarget(
+            name: "VaporUtilsTests",
+            dependencies: [
+                .target(name: "VaporUtils"),
+            ],
+            swiftSettings: swiftSettings,
+        ),
+        .testTarget(
+            name: "VaporRedisUtilsTests",
+            dependencies: [
+                .target(name: "VaporRedisUtils"),
+                .target(name: "VaporUtils"),
+                .product(name: "Vapor", package: "vapor"),
+            ],
+            swiftSettings: swiftSettings,
+        ),
+        .testTarget(
             name: "MiniDexServerTests",
             dependencies: [
                 .target(name: "MiniDexServer"),
+                .target(name: "VaporRedisUtils"),
                 .product(name: "VaporTesting", package: "vapor"),
+                .product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
             ],
             swiftSettings: swiftSettings,
         )

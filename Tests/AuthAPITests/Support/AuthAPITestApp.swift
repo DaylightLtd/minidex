@@ -14,7 +14,7 @@ enum AuthAPITestApp {
         accessTokenExpiration: TimeInterval = defaultExpiration,
         _ test: @Sendable (Application, InMemoryRedisDriver) async throws -> Void
     ) async throws {
-        let app = try await Application.make(.testing)
+        let app = try await Application.makeTesting()
         let redisDriver = InMemoryRedisDriver()
 
         do {

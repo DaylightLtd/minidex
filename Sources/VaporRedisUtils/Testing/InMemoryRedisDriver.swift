@@ -94,6 +94,8 @@ public final class InMemoryRedisDriver: @unchecked Sendable {
             return try handleGet(arguments: arguments)
         case "DEL":
             return try handleDel(arguments: arguments)
+        case "EXISTS":
+            return try handleExists(arguments: arguments)
         default:
             throw InMemoryRedisError.unsupportedCommand(command)
         }
@@ -163,6 +165,30 @@ public final class InMemoryRedisDriver: @unchecked Sendable {
         }
 
         return .integer(removed)
+    }
+
+    private func handleExists(arguments: [RESPValue]) throws -> RESPValue {
+        guard !arguments.isEmpty else {
+            throw InMemoryRedisError.invalidCommand("EXISTS")
+        }
+
+        let keys: [RedisKey] = try arguments.map {
+            guard let key = RedisKey(fromRESP: $0) else {
+                throw InMemoryRedisError.invalidCommand("EXISTS")
+            }
+            return key
+        }
+
+        let count = state.withLockedValue { state -> Int in
+            purgeExpiredLocked(state: &state)
+            return keys.reduce(into: 0) { result, key in
+                if state.entries[key] != nil {
+                    result += 1
+                }
+            }
+        }
+
+        return .integer(count)
     }
 
     private func purgeExpiredLocked(state: inout State) {

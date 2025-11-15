@@ -90,7 +90,7 @@ struct TokenAuthenticatorTests {
 // MARK: - Helpers
 
 private func withApp(_ test: @escaping (Application, InMemoryRedisDriver) async throws -> Void) async throws {
-    let app = try await Application.make(.testing)
+    let app = try await Application.makeTesting()
     let redisDriver = InMemoryRedisDriver()
     try await TestDatabaseHelpers.migrate(app)
     app.useRedisClientOverride { request in

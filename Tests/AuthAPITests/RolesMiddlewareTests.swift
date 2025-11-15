@@ -1,5 +1,6 @@
 @testable import AuthAPI
 import Vapor
+import VaporUtils
 import Testing
 
 @Suite("RolesMiddleware", .serialized)
@@ -61,7 +62,7 @@ private func withRequest(
     userRoles: Roles,
     _ body: @escaping (Request, TestResponder) async throws -> Void
 ) async throws {
-    let app = try await Application.make(.testing)
+    let app = try await Application.makeTesting()
 
     let req = Request(application: app, on: app.eventLoopGroup.next())
     if !userRoles.isEmpty {
