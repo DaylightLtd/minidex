@@ -28,7 +28,7 @@ struct GameSystemController: RouteCollection {
         let root = routes
             .grouped("api", "gamesystem")
             .grouped(TokenAuthenticator())
-            .grouped(User.guardMiddleware())
+            .grouped(AuthUser.guardMiddleware())
             .grouped(RequireAnyRolesMiddleware(roles: [.admin, .cataloguer]))
 
         root.get(use: crud.index)

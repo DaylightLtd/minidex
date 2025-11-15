@@ -1,12 +1,12 @@
 import AuthDB
 import Fluent
+import Redis
 import Vapor
 
 struct LoginOut: Content {
     var accessToken: String
     var expiresIn: Int
     var userId: UUID
-    var displayName: String?
 }
 
 struct RegisterIn: Content, Validatable {
@@ -32,14 +32,20 @@ public struct AuthController: RouteCollection, Sendable {
     public func boot(routes: any RoutesBuilder) throws {
         let group = routes.grouped("api", "auth")
         group.post("register", use: self.register)
+
         group
             .grouped(UsernameAndPasswordAuthenticator())
             .post("login", use: self.login)
+
+        group
+            .grouped(TokenAuthenticator())
+            .grouped(AuthUser.guardMiddleware())
+            .post("logout", use: self.logout)
     }
 
     @Sendable
     func login(req: Request) async throws -> LoginOut {
-        let user = try req.auth.require(User.self)
+        var user = try req.auth.require(AuthUser.self)
 
         if !user.isActive {
             throw Abort(.forbidden, reason: "User is not active")
@@ -49,22 +55,52 @@ public struct AuthController: RouteCollection, Sendable {
         }
 
         let tokenValue = generateToken(length: tokenLength)
+        let hashedTokenValue = Data(SHA256.hash(data: tokenValue))
         let expiresAt = Date() + accessTokenExpiration
 
         let token = DBUserToken(
             userID: user.id,
             type: .access,
-            value: Data(SHA256.hash(data: tokenValue)),
+            value: hashedTokenValue,
             expiresAt: expiresAt
         )
         try await token.save(on: req.db)
 
+        let accessToken = tokenValue.base64URLEncodedString()
+        user.tokenID = try token.requireID()
+
+        await req.redis.cache(
+            accessToken: accessToken,
+            hashedAccessToken: hashedTokenValue.base64URLEncodedString(),
+            user: user,
+            accessTokenExpiration: accessTokenExpiration,
+            logger: req.logger,
+        )
+
         return .init(
-            accessToken: tokenValue.base64URLEncodedString(),
+            accessToken: accessToken,
             expiresIn: Int(token.expiresAt.timeIntervalSinceNow),
             userId: user.id,
-            displayName: user.displayName,
         )
+    }
+
+    @Sendable
+    func logout(req: Request) async throws -> HTTPStatus {
+        let user = try req.auth.require(AuthUser.self)
+
+        if
+            let tokenID = user.tokenID,
+            let token = try await DBUserToken.find(tokenID, on: req.db)
+        {
+            token.isRevoked = true
+            try await token.save(on: req.db)
+            await req.redis.invalidate(
+                hashedAccessToken: token.value.base64URLEncodedString(),
+                logger: req.logger
+            )
+        }
+
+        return .ok
     }
 
     @Sendable

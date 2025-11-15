@@ -16,6 +16,11 @@ enum Settings {
         static var adminUsername: String? { Environment.get("ADMIN_USERNAME") }
         static var adminPassword: String? { Environment.get("ADMIN_PASSWORD") }
     }
+
+    enum Redis {
+        static var hostname: String? { Environment.get("REDIS_HOST") }
+        static var port: Int? { Environment.get("REDIS_PORT").flatMap(Int.init(_:)) }
+    }
 }
 
 struct InvalidDBSettingsError: Error, CustomStringConvertible, CustomNSError {

@@ -29,7 +29,7 @@ struct MiniController: RouteCollection {
         let root = routes
             .grouped("api", "mini")
             .grouped(TokenAuthenticator())
-            .grouped(User.guardMiddleware())
+            .grouped(AuthUser.guardMiddleware())
             .grouped(RequireAnyRolesMiddleware(roles: [.admin, .cataloguer]))
 
         root.get(use: crud.index)

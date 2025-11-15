@@ -37,7 +37,7 @@ private func respond(
     chainingTo next: any AsyncResponder,
     match: @Sendable @escaping (Roles) -> Bool,
 ) async throws -> Response {
-    guard let user = request.auth.get(User.self), match(user.roles) else {
+    guard let user = request.auth.get(AuthUser.self), match(user.roles) else {
         throw Abort(.forbidden)
     }
     return try await next.respond(to: request)

@@ -4,6 +4,7 @@ import FluentPostgresDriver
 import Leaf
 import MiniDexDB
 import NIOSSL
+import Redis
 import Vapor
 
 // configures your application
@@ -11,25 +12,33 @@ public func configure(_ app: Application) async throws {
     // uncomment to serve files from /Public folder
     // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
-    guard let hostname = Settings.DB.hostname else { throw InvalidDBSettingsError(key: "DATABASE_HOST") }
-    guard let username = Settings.DB.username else { throw InvalidDBSettingsError(key: "DATABASE_USERNAME") }
-    guard let password = Settings.DB.password else { throw InvalidDBSettingsError(key: "DATABASE_PASSWORD") }
-    guard let database = Settings.DB.database else { throw InvalidDBSettingsError(key: "DATABASE_NAME") }
+    guard let dbHostname = Settings.DB.hostname else { throw InvalidDBSettingsError(key: "DATABASE_HOST") }
+    guard let dbPort = Settings.DB.port else { throw InvalidDBSettingsError(key: "DATABASE_PORT") }
+    guard let dbUsername = Settings.DB.username else { throw InvalidDBSettingsError(key: "DATABASE_USERNAME") }
+    guard let dbPassword = Settings.DB.password else { throw InvalidDBSettingsError(key: "DATABASE_PASSWORD") }
+    guard let dbName = Settings.DB.database else { throw InvalidDBSettingsError(key: "DATABASE_NAME") }
+    guard let redisHostname = Settings.Redis.hostname else { throw InvalidDBSettingsError(key: "REDIS_HOST") }
+    guard let redisPort = Settings.Redis.port else { throw InvalidDBSettingsError(key: "REDIS_PORT") }
 
     app.databases.use(
         DatabaseConfigurationFactory.postgres(
             configuration: .init(
-                hostname: hostname,
-                port: Settings.DB.port ?? SQLPostgresConfiguration.ianaPortNumber,
-                username: username,
-                password: password,
-                database: database,
+                hostname: dbHostname,
+                port: dbPort,
+                username: dbUsername,
+                password: dbPassword,
+                database: dbName,
                 tls: .prefer(
                     try .init(configuration: .clientDefault)
                 )
             )
         ),
         as: .psql
+    )
+
+    app.redis.configuration = try RedisConfiguration(
+        hostname: redisHostname,
+        port: redisPort,
     )
 
     app.migrations.add(AuthDB.migrations)

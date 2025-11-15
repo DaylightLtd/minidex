@@ -18,11 +18,11 @@ public struct UsernameAndPasswordAuthenticator: AsyncBasicAuthenticator {
            try Bcrypt.verify(basic.password, created: secret)
         {
             let dbUser = try credential.joined(DBUser.self)
-            let user = try User(
+            let user = try AuthUser(
                 id: dbUser.requireID(),
-                displayName: dbUser.displayName,
                 roles: .init(rawValue: dbUser.roles),
                 isActive: dbUser.isActive,
+                tokenID: nil,
             )
             request.auth.login(user)
         }

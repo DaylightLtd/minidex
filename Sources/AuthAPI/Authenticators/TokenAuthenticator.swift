@@ -1,11 +1,18 @@
 import AuthDB
 import Fluent
+import Redis
 import Vapor
 
 public struct TokenAuthenticator: AsyncBearerAuthenticator {
     public init() {}
 
     public func authenticate(bearer: BearerAuthorization, for request: Request) async throws {
+        if let cached = await request.redis.getCachedUser(accessToken: bearer.token, logger: request.logger) {
+            request.logger.debug("Token auth cache hit for userID: \(cached.id)")
+            request.auth.login(cached)
+            return
+        }
+
         guard let hash = bearer.token
             .base64URLDecodedData()
             .map(SHA256.hash(data:))
@@ -23,13 +30,21 @@ public struct TokenAuthenticator: AsyncBearerAuthenticator {
            token.expiresAt.timeIntervalSinceNow > 0
         {
             let dbUser = try token.joined(DBUser.self)
-            let user = try User(
+            let user = try AuthUser(
                 id: dbUser.requireID(),
-                displayName: dbUser.displayName,
                 roles: .init(rawValue: dbUser.roles),
                 isActive: dbUser.isActive,
+                tokenID: token.requireID(),
             )
             request.auth.login(user)
+
+            await request.redis.cache(
+                accessToken: bearer.token,
+                hashedAccessToken: hash.base64URLEncodedString(),
+                user: user,
+                accessTokenExpiration: token.expiresAt.timeIntervalSinceNow,
+                logger: request.logger,
+            )
         }
     }
 }
