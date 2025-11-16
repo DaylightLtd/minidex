@@ -43,6 +43,9 @@ let package = Package(
                 .product(name: "Redis", package: "redis"),
                 .product(name: "Vapor", package: "vapor"),
             ],
+            exclude: [
+                "README.md",
+            ],
             swiftSettings: swiftSettings,
         ),
         .target(
