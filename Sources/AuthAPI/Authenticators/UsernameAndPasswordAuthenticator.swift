@@ -25,6 +25,9 @@ public struct UsernameAndPasswordAuthenticator: AsyncBasicAuthenticator {
                 tokenID: nil,
             )
             request.auth.login(user)
+            request.logger.debug("Username/password verified for userID: \(user.id)")
+        } else {
+            request.logger.debug("Username/password auth failed")
         }
     }
 }

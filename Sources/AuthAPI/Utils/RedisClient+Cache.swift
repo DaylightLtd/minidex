@@ -31,7 +31,10 @@ extension RedisClient {
         logger: Logger,
     ) async {
         let ttl = Int(accessTokenExpiration)
-        guard ttl > 0 else { return }
+        guard ttl > 0 else {
+            logger.warning("Skipped caching token with TTL <= 0")
+            return
+        }
 
         do {
             // Cache user in Redis for fast lookup
@@ -46,6 +49,12 @@ extension RedisClient {
                 toJSON: accessToken,
                 expirationInSeconds: ttl
             )
+
+            if let tokenID = user.tokenID {
+                logger.debug("Cached userID: \(user.id), tokenID: \(tokenID)")
+            } else {
+                logger.warning("Cached userID: \(user.id), tokenID missing!")
+            }
         } catch {
             logger.error("Auth cache to Redis failed: \(error)")
         }
@@ -57,10 +66,12 @@ extension RedisClient {
                 Self.tokenCacheKey(hashedAccessToken: hashedAccessToken),
                 asJSON: String.self
             ) else {
+                logger.debug("No auth cache to invalidate")
                 return
             }
             _ = try await delete(Self.userCacheKey(accessToken: accessToken)).get()
             _ = try await delete(Self.tokenCacheKey(hashedAccessToken: hashedAccessToken)).get()
+            logger.debug("Auth cache invalidated")
         } catch {
             logger.error("Auth cache invalidation from Redis failed: \(error)")
         }

@@ -26,6 +26,12 @@ struct Migration_0002_CreateUserToken: AsyncMigration {
                 .column("value")
                 .unique()
                 .run()
+
+            try await sqlDB
+                .create(index: "idx_user_tokens_user_id")
+                .on("user_tokens")
+                .column("user_id")
+                .run()
         }
     }
 
@@ -33,6 +39,10 @@ struct Migration_0002_CreateUserToken: AsyncMigration {
         if let sqlDB = database as? any SQLDatabase {
             try await sqlDB
                 .drop(index: "idx_user_tokens_value")
+                .run()
+
+            try await sqlDB
+                .drop(index: "idx_user_tokens_user_id")
                 .run()
         }
 

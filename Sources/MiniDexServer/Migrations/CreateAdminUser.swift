@@ -16,7 +16,7 @@ struct Migration_CreateAdminUser: AsyncMigration {
             .filter(\.$identifier == username)
             .first() != nil
         {
-            // Admin user already exists
+            logger.info("Admin user already exists")
             return
         }
 

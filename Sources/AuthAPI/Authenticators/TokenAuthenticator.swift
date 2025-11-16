@@ -16,11 +16,13 @@ public struct TokenAuthenticator: AsyncBearerAuthenticator {
                let token = try await DBUserToken.find(tokenID, on: request.db),
                isTokenValid(token)
             {
+                request.logger.debug("Cached token valid for userID: \(cached.id)")
                 request.auth.login(cached)
             }
             return
         }
 
+        request.logger.debug("Token auth cache miss")
         guard let hash = Self.hashAccessToken(bearer.token) else { return }
 
         let token = try await DBUserToken
@@ -46,6 +48,9 @@ public struct TokenAuthenticator: AsyncBearerAuthenticator {
                 accessTokenExpiration: token.expiresAt.timeIntervalSinceNow,
                 logger: request.logger,
             )
+            request.logger.debug("Auth token verified for userID: \(user.id)")
+        } else {
+            request.logger.debug("Token auth failed")
         }
     }
 

@@ -50,17 +50,17 @@ public struct UserController: RouteCollection, Sendable {
         let updated = try User(db: dbModel)
 
         if userAccessChanged {
+            req.logger.debug("User access changed, revoking tokens...")
             try await req.db.transaction { db in
                 try await dbModel.save(on: db)
-
-                try await DBUserToken
-                    .query(on: db)
-                    .filter(\.$user.$id == userID)
-                    .set(\.$isRevoked, to: true)
-                    .update()
-                
-                try await invalidateCache(userID: userID, db: db, redis: req.redisClient, logger: req.logger)
+                try await TokenRevocation.revokeAllActiveTokens(
+                    userID: userID,
+                    db: db,
+                    redis: req.redisClient,
+                    logger: req.logger
+                )
             }
+            req.logger.debug("Revoked tokens for userID: \(userID)")
         } else {
             try await dbModel.save(on: req.db)
         }
@@ -71,27 +71,14 @@ public struct UserController: RouteCollection, Sendable {
     @Sendable
     func revokeAccess(req: Request) async throws -> HTTPStatus {
         let userID = try req.parameters.require("id", as: UUID.self)
-        let tokens = try await DBUserToken.allTokens(forUserID: userID, on: req.db)
-
-        for token in tokens {
-            try await TokenRevocation.revoke(token, on: req.db, redis: req.redisClient, logger: req.logger)
-        }
-
+        try await TokenRevocation.revokeAllActiveTokens(
+            userID: userID,
+            db: req.db,
+            redis: req.redisClient,
+            logger: req.logger
+        )
+        req.logger.debug("Revoked access for userID: \(userID)")
         return .ok
-    }
-
-    private func invalidateCache(
-        userID: UUID,
-        db: any Database,
-        redis: any RedisClient,
-        logger: Logger,
-    ) async throws {
-        let tokens = try await DBUserToken.allTokens(forUserID: userID, on: db)
-
-        for token in tokens {
-            let hashed = token.value.base64URLEncodedString()
-            await redis.invalidate(hashedAccessToken: hashed, logger: logger)
-        }
     }
 }
 

@@ -31,6 +31,12 @@ struct Migration_0001_CreateUserAndCredential: AsyncMigration {
 
         if let sqlDB = database as? any SQLDatabase {
             try await sqlDB
+                .create(index: "idx_credentials_user_id")
+                .on("credentials")
+                .column("user_id")
+                .run()
+
+            try await sqlDB
                 .create(index: "idx_credentials_type_identifier")
                 .on("credentials")
                 .column("type")
@@ -44,6 +50,10 @@ struct Migration_0001_CreateUserAndCredential: AsyncMigration {
         if let sqlDB = database as? any SQLDatabase {
             try await sqlDB
                 .drop(index: "idx_credentials_type_identifier")
+                .run()
+
+            try await sqlDB
+                .drop(index: "idx_credentials_user_id")
                 .run()
         }
 

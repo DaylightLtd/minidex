@@ -47,15 +47,3 @@ public final class DBUserToken: Model, @unchecked Sendable {
         self.isRevoked = isRevoked
     }
 }
-
-extension DBUserToken {
-    public static func allTokens(
-        forUserID userID: UUID,
-        on database: any Database
-    ) async throws -> [DBUserToken] {
-        try await DBUserToken
-            .query(on: database)
-            .filter(\.$user.$id == userID)
-            .all()
-    }
-}
