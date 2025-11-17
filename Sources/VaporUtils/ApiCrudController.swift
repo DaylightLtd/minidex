@@ -67,4 +67,3 @@ where
         throw Abort(.notFound)
     }
 }
-
