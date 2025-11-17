@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - frontend-setup
     paths:
       - 'web/**'
   pull_request:
