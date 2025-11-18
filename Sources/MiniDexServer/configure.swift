@@ -1,7 +1,6 @@
 import AuthDB
 import Fluent
 import FluentPostgresDriver
-import Leaf
 import MiniDexDB
 import NIOSSL
 import Redis
@@ -44,8 +43,6 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(AuthDB.migrations)
     app.migrations.add(Migration_CreateAdminUser(logger: app.logger))
     app.migrations.add(MiniDexDB.migrations)
-
-    app.views.use(.leaf)
 
     // register routes
     try routes(app)
