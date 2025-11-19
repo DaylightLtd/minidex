@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 
 import { api } from "@/lib/api-client";
 
@@ -21,6 +21,25 @@ type LoginResponse = {
 };
 
 export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <Container
+          maxWidth="sm"
+          sx={{ display: "flex", alignItems: "center", minHeight: "100vh" }}
+        >
+          <Paper elevation={1} sx={{ p: 4, width: "100%" }}>
+            <Typography variant="h5">Loading...</Typography>
+          </Paper>
+        </Container>
+      }
+    >
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
