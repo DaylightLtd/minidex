@@ -5,7 +5,10 @@ import Vapor
 
 enum TestDatabaseHelpers {
     static func migrate(_ app: Application) async throws {
-        app.databases.use(.sqlite(.memory), as: .sqlite)
+        app.databases.use(
+            .sqlite(.memory, maxConnectionsPerEventLoop: 1),
+            as: .sqlite,
+        )
         app.migrations.add(AuthDB.migrations)
         try await app.autoMigrate()
     }
