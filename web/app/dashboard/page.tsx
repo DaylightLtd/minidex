@@ -1,29 +1,29 @@
-'use client'
+"use client";
 
-import { useQuery } from '@tanstack/react-query'
 import {
   Alert,
   Box,
+  Button,
   Card,
   CardContent,
   CircularProgress,
   Stack,
   Typography,
-  Button,
-} from '@mui/material'
+} from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 
-import LogoutButton from '@/app/components/LogoutButton'
-import { api } from '@/lib/api-client'
+import LogoutButton from "@/app/components/LogoutButton";
+import { api } from "@/lib/api-client";
 
 type CurrentUser = {
-  id: string
-  displayName?: string | null
-  roles: number
-  isActive: boolean
-}
+  id: string;
+  displayName?: string | null;
+  roles: number;
+  isActive: boolean;
+};
 
 async function fetchCurrentUser() {
-  return api.get<CurrentUser>('/user', { cache: 'no-store' })
+  return api.get<CurrentUser>("/user", { cache: "no-store" });
 }
 
 export default function DashboardPage() {
@@ -34,17 +34,17 @@ export default function DashboardPage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['current-user'],
+    queryKey: ["current-user"],
     queryFn: fetchCurrentUser,
-  })
+  });
 
-  const showLoading = isLoading && !error
+  const showLoading = isLoading && !error;
 
   return (
     <Box
       sx={{
         maxWidth: 640,
-        mx: 'auto',
+        mx: "auto",
         my: 8,
         px: 2,
       }}
@@ -55,7 +55,8 @@ export default function DashboardPage() {
             Dashboard
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            You are logged in to MiniDex. Use the navigation to access other sections.
+            You are logged in to MiniDex. Use the navigation to access other
+            sections.
           </Typography>
         </Box>
 
@@ -82,14 +83,15 @@ export default function DashboardPage() {
           <Card>
             <CardContent>
               <Typography variant="h5" component="h2" gutterBottom>
-                Welcome back{user.displayName ? `, ${user.displayName}` : ''}!
+                Welcome back{user.displayName ? `, ${user.displayName}` : ""}!
               </Typography>
               <Stack spacing={1}>
                 <Typography variant="body1">
                   <strong>User ID:</strong> {user.id}
                 </Typography>
                 <Typography variant="body1">
-                  <strong>Status:</strong> {user.isActive ? 'Active' : 'Inactive'}
+                  <strong>Status:</strong>{" "}
+                  {user.isActive ? "Active" : "Inactive"}
                 </Typography>
                 <Typography variant="body1">
                   <strong>Roles bitmask:</strong> {user.roles}
@@ -100,11 +102,15 @@ export default function DashboardPage() {
         )}
 
         <Box display="flex" justifyContent="flex-end">
-          <LogoutButton variant="outlined" color="primary" disabled={isRefetching}>
+          <LogoutButton
+            variant="outlined"
+            color="primary"
+            disabled={isRefetching}
+          >
             Logout
           </LogoutButton>
         </Box>
       </Stack>
     </Box>
-  )
+  );
 }
