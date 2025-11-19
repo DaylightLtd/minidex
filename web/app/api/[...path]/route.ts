@@ -4,7 +4,7 @@
  * This route handles all API requests and forwards them to the Vapor server
  * with the authentication token from HttpOnly cookies.
  *
- * Usage: /api/* will be proxied to http://server:8080/*
+ * Usage: /api/* will be proxied to http://server:8080/v1/*
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -53,8 +53,9 @@ export async function DELETE(
 
 async function proxyRequest(request: NextRequest, pathSegments: string[], method: string) {
   try {
-    // Reconstruct the path
-    const path = `/${pathSegments.join('/')}`
+    // Reconstruct the versioned path
+    const relativePath = pathSegments.join('/')
+    const path = `/v1${relativePath ? `/${relativePath}` : ''}`
 
     // Get query parameters from the request
     const searchParams = request.nextUrl.searchParams

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const upstream = await fetch(`${API_URL}/api/auth/logout`, {
+    const upstream = await fetch(`${API_URL}/v1/auth/logout`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

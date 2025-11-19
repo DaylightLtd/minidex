@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const upstream = await fetch(`${API_URL}/api/auth/login`, {
+    const upstream = await fetch(`${API_URL}/v1/auth/login`, {
       method: 'POST',
       headers: {
         Authorization: buildBasicAuthHeader(username, password),
