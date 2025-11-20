@@ -10,35 +10,20 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 
 import LogoutButton from "@/app/components/LogoutButton";
-import { api } from "@/lib/api-client";
-
-type CurrentUser = {
-  id: string;
-  displayName?: string | null;
-  roles: number;
-  isActive: boolean;
-};
-
-async function fetchCurrentUser() {
-  return api.get<CurrentUser>("/user", { cache: "no-store" });
-}
+import { useCurrentUser } from "@/app/hooks/use-current-user";
 
 export default function DashboardPage() {
   const {
     data: user,
-    isLoading,
-    isRefetching,
+    isPending,
+    isFetching,
     error,
     refetch,
-  } = useQuery({
-    queryKey: ["current-user"],
-    queryFn: fetchCurrentUser,
-  });
+  } = useCurrentUser();
 
-  const showLoading = isLoading && !error;
+  const showLoading = isPending && !error;
 
   return (
     <Box
@@ -105,7 +90,7 @@ export default function DashboardPage() {
           <LogoutButton
             variant="outlined"
             color="primary"
-            disabled={isRefetching}
+            disabled={isFetching}
           >
             Logout
           </LogoutButton>

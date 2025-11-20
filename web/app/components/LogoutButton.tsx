@@ -7,10 +7,12 @@ import {
   CircularProgress,
   Snackbar,
 } from "@mui/material";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { api } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
 
 type LogoutButtonProps = ButtonProps & {
   redirectTo?: string;
@@ -22,21 +24,27 @@ export function LogoutButton({
   ...buttonProps
 }: LogoutButtonProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
-  async function handleLogout() {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      await api.post<{ success: boolean }>("/auth/logout");
+  const logoutMutation = useMutation({
+    mutationFn: () => api.post<{ success: boolean }>("/auth/logout"),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.currentUser });
       router.replace(redirectTo);
       router.refresh();
-    } catch (err) {
+    },
+    onError: (err) => {
       setError(err instanceof Error ? err.message : "Failed to logout");
-    } finally {
-      setIsLoading(false);
+    },
+  });
+
+  async function handleLogout() {
+    setError(null);
+    try {
+      await logoutMutation.mutateAsync();
+    } catch {
+      // Error state is handled in onError
     }
   }
 
@@ -45,9 +53,13 @@ export function LogoutButton({
       <Button
         {...buttonProps}
         onClick={handleLogout}
-        disabled={isLoading || buttonProps.disabled}
+        disabled={logoutMutation.isPending || buttonProps.disabled}
         startIcon={
-          isLoading ? <CircularProgress size={16} /> : buttonProps.startIcon
+          logoutMutation.isPending ? (
+            <CircularProgress size={16} />
+          ) : (
+            buttonProps.startIcon
+          )
         }
       >
         {children ?? "Logout"}
