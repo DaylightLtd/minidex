@@ -4,6 +4,7 @@ import Fluent
 import Testing
 import Vapor
 import VaporTesting
+import VaporTestingUtils
 import VaporRedisUtils
 @preconcurrency import Redis
 
@@ -12,15 +13,15 @@ struct AuthControllerTests {
     @Test("login issues token and caches user")
     func loginCachesUser() async throws {
         try await AuthAPITestApp.withApp { app, redis in
-            let user = try await AuthAPITestHelpers.createUser(
+            let user = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "ash",
                 password: "pikachu",
-                roles: [.admin],
+                roles: .admin,
             )
             let userID = try user.requireID()
 
-            let login = try await AuthAPITestHelpers.login(app: app, username: "ash", password: "pikachu")
+            let login = try await AuthenticatedTestContext.login(app: app, username: "ash", password: "pikachu")
             #expect(login.userId == userID)
 
             let tokens = try await DBUserToken.query(on: app.db).all()
@@ -48,10 +49,10 @@ struct AuthControllerTests {
     @Test("login rejects inactive user")
     func loginRejectsInactiveUser() async throws {
         try await AuthAPITestApp.withApp { app, redis in
-            _ = try await AuthAPITestHelpers.createUser(
+            _ = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "brock",
-                roles: [.admin],
+                roles: .admin,
                 isActive: false
             )
 
@@ -75,7 +76,7 @@ struct AuthControllerTests {
     @Test("login rejects user without roles")
     func loginRejectsRoleLessUser() async throws {
         try await AuthAPITestApp.withApp { app, redis in
-            _ = try await AuthAPITestHelpers.createUser(
+            _ = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "misty",
                 roles: [],
@@ -102,16 +103,16 @@ struct AuthControllerTests {
     @Test("login succeeds when Redis cache fails")
     func loginHandlesRedisFailure() async throws {
         try await AuthAPITestApp.withApp { app, redis in
-            _ = try await AuthAPITestHelpers.createUser(
+            _ = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "gary",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
 
             redis.failNextCommand("SETEX")
 
-            let login = try await AuthAPITestHelpers.login(app: app, username: "gary", password: "Password!23")
+            let login = try await AuthenticatedTestContext.login(app: app, username: "gary", password: "Password!23")
             #expect(!login.accessToken.isEmpty)
 
             let tokens = try await DBUserToken.query(on: app.db).count()
@@ -122,14 +123,14 @@ struct AuthControllerTests {
     @Test("logout revokes token and clears cache")
     func logoutRevokesToken() async throws {
         try await AuthAPITestApp.withApp { app, redis in
-            let user = try await AuthAPITestHelpers.createUser(
+            let user = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "serena",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
             let userID = try user.requireID()
-            let login = try await AuthAPITestHelpers.login(app: app, username: "serena", password: "Password!23")
+            let login = try await AuthenticatedTestContext.login(app: app, username: "serena", password: "Password!23")
 
             try await app.testing().test(
                 .POST,
@@ -155,13 +156,13 @@ struct AuthControllerTests {
     @Test("logout returns not found when token missing")
     func logoutWithMissingTokenReturnsNotFound() async throws {
         try await AuthAPITestApp.withApp { app, redis in
-            let user = try await AuthAPITestHelpers.createUser(
+            let user = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "cilan",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
-            let login = try await AuthAPITestHelpers.login(app: app, username: "cilan", password: "Password!23")
+            let login = try await AuthenticatedTestContext.login(app: app, username: "cilan", password: "Password!23")
 
             let token = try await DBUserToken.query(on: app.db)
                 .filter(\.$user.$id == user.requireID())
@@ -184,14 +185,14 @@ struct AuthControllerTests {
     @Test("logout succeeds even if Redis invalidation fails")
     func logoutHandlesRedisInvalidationFailure() async throws {
         try await AuthAPITestApp.withApp { app, redis in
-            let user = try await AuthAPITestHelpers.createUser(
+            let user = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "iris",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
             let userID = try user.requireID()
-            let login = try await AuthAPITestHelpers.login(app: app, username: "iris", password: "Password!23")
+            let login = try await AuthenticatedTestContext.login(app: app, username: "iris", password: "Password!23")
 
             redis.failNextCommand("DEL")
 
@@ -217,7 +218,7 @@ struct AuthControllerTests {
     @Test("registration rejects duplicate username")
     func registrationRejectsDuplicateUsername() async throws {
         try await AuthAPITestApp.withApp { app, _ in
-            _ = try await AuthAPITestHelpers.createUser(
+            _ = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "clemont",
                 roles: [],

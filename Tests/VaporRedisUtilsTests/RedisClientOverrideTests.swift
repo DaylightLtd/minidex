@@ -2,7 +2,6 @@
 import Vapor
 @preconcurrency import Redis
 import Logging
-import VaporUtils
 import Testing
 
 @Suite("RedisClientOverride", .serialized)
@@ -31,7 +30,8 @@ struct RedisClientOverrideTests {
 }
 
 private func withApplication(_ body: @escaping (Application) async throws -> Void) async throws {
-    let app = try await Application.makeTesting()
+    let app = try await Application.make(.testing)
+    app.logger.logLevel = .warning
     do {
         try await body(app)
     } catch {

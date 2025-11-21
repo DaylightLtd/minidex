@@ -35,4 +35,3 @@ extension Request {
         return self.redis
     }
 }
-

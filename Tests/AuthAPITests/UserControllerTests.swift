@@ -4,6 +4,7 @@ import Fluent
 import Testing
 import Vapor
 import VaporTesting
+import VaporTestingUtils
 import VaporRedisUtils
 @preconcurrency import Redis
 
@@ -13,14 +14,18 @@ struct UserControllerTests {
     func patchingNothingDoesNotRevokeTokens() async throws {
         try await AuthAPITestApp.withApp { app, redis in
             let (_, adminToken) = try await makeAdmin(app: app)
-            let target = try await AuthAPITestHelpers.createUser(
+            let target = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "may",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
             let targetID = try target.requireID()
-            _ = try await AuthAPITestHelpers.login(app: app, username: "may", password: "Password!23")
+            _ = try await AuthenticatedTestContext.login(
+                app: app,
+                username: "may",
+                password: "Password!23"
+            )
 
             try await app.testing().test(
                 .PATCH,
@@ -47,15 +52,19 @@ struct UserControllerTests {
     func patchRolesRevokesTokens() async throws {
         try await AuthAPITestApp.withApp { app, redis in
             let (_, adminToken) = try await makeAdmin(app: app)
-            let target = try await AuthAPITestHelpers.createUser(
+            let target = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "dawn",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
             let targetID = try target.requireID()
 
-            let targetLogin = try await AuthAPITestHelpers.login(app: app, username: "dawn", password: "Password!23")
+            let targetLogin = try await AuthenticatedTestContext.login(
+                app: app,
+                username: "dawn",
+                password: "Password!23"
+            )
 
             try await app.testing().test(
                 .PATCH,
@@ -84,14 +93,18 @@ struct UserControllerTests {
     func patchActivityRevokesTokens() async throws {
         try await AuthAPITestApp.withApp { app, redis in
             let (_, adminToken) = try await makeAdmin(app: app)
-            let target = try await AuthAPITestHelpers.createUser(
+            let target = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "paul",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
             let targetID = try target.requireID()
-            let targetLogin = try await AuthAPITestHelpers.login(app: app, username: "paul", password: "Password!23")
+            let targetLogin = try await AuthenticatedTestContext.login(
+                app: app,
+                username: "paul",
+                password: "Password!23"
+            )
 
             try await app.testing().test(
                 .PATCH,
@@ -120,14 +133,18 @@ struct UserControllerTests {
     func patchRolesToSameValueDoesNotRevokeTokens() async throws {
         try await AuthAPITestApp.withApp { app, redis in
             let (_, adminToken) = try await makeAdmin(app: app)
-            let target = try await AuthAPITestHelpers.createUser(
+            let target = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "brock",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
             let targetID = try target.requireID()
-            let targetLogin = try await AuthAPITestHelpers.login(app: app, username: "brock", password: "Password!23")
+            let targetLogin = try await AuthenticatedTestContext.login(
+                app: app,
+                username: "brock",
+                password: "Password!23"
+            )
 
             try await app.testing().test(
                 .PATCH,
@@ -163,14 +180,18 @@ struct UserControllerTests {
     func patchIsActiveToSameValueDoesNotRevokeTokens() async throws {
         try await AuthAPITestApp.withApp { app, redis in
             let (_, adminToken) = try await makeAdmin(app: app)
-            let target = try await AuthAPITestHelpers.createUser(
+            let target = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "misty",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
             let targetID = try target.requireID()
-            let targetLogin = try await AuthAPITestHelpers.login(app: app, username: "misty", password: "Password!23")
+            let targetLogin = try await AuthenticatedTestContext.login(
+                app: app,
+                username: "misty",
+                password: "Password!23"
+            )
 
             try await app.testing().test(
                 .PATCH,
@@ -206,14 +227,14 @@ struct UserControllerTests {
     func userRejectedAfterRoleChange() async throws {
         try await AuthAPITestApp.withApp { app, redis in
             let (_, adminToken) = try await makeAdmin(app: app)
-            let target = try await AuthAPITestHelpers.createUser(
+            let target = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "cynthia",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
             let targetID = try target.requireID()
-            let targetLogin = try await AuthAPITestHelpers.login(app: app, username: "cynthia", password: "Password!23")
+            let targetLogin = try await AuthenticatedTestContext.login(app: app, username: "cynthia", password: "Password!23")
 
             try await app.testing().test(
                 .POST,
@@ -226,7 +247,11 @@ struct UserControllerTests {
                 }
             )
 
-            let targetLogin2 = try await AuthAPITestHelpers.login(app: app, username: "cynthia", password: "Password!23")
+            let targetLogin2 = try await AuthenticatedTestContext.login(
+                app: app,
+                username: "cynthia",
+                password: "Password!23"
+            )
 
             try await app.testing().test(
                 .PATCH,
@@ -276,14 +301,18 @@ struct UserControllerTests {
     func revokeAccess() async throws {
         try await AuthAPITestApp.withApp { app, redis in
             let (_, adminToken) = try await makeAdmin(app: app)
-            let target = try await AuthAPITestHelpers.createUser(
+            let target = try await AuthenticatedTestContext.createUser(
                 on: app.db,
                 username: "lyra",
-                roles: [.admin],
+                roles: .admin,
                 isActive: true
             )
             let targetID = try target.requireID()
-            let targetLogin = try await AuthAPITestHelpers.login(app: app, username: "lyra", password: "Password!23")
+            let targetLogin = try await AuthenticatedTestContext.login(
+                app: app,
+                username: "lyra",
+                password: "Password!23"
+            )
 
             try await app.testing().test(
                 .POST,
@@ -306,14 +335,14 @@ struct UserControllerTests {
     }
 }
 
-private func makeAdmin(app: Application) async throws -> (DBUser, LoginResponse) {
-    let admin = try await AuthAPITestHelpers.createUser(
+private func makeAdmin(app: Application) async throws -> (DBUser, TestLoginResponse) {
+    let admin = try await AuthenticatedTestContext.createUser(
         on: app.db,
         username: "admin",
         password: "AdminPassword!23",
-        roles: [.admin],
+        roles: .admin,
         isActive: true
     )
-    let login = try await AuthAPITestHelpers.login(app: app, username: "admin", password: "AdminPassword!23")
+    let login = try await AuthenticatedTestContext.login(app: app, username: "admin", password: "AdminPassword!23")
     return (admin, login)
 }

@@ -1,13 +1,20 @@
+import MiniDexDB
 @testable import MiniDexServer
 import Foundation
 import Testing
 import VaporTesting
+import VaporTestingUtils
 
 @Suite("UserProfile Controller", .serialized)
 struct UserProfileControllerTests {
     @Test("returns 404 when profile missing for user id")
     func getBeforeProfileCreation() async throws {
-        try await TestContext.withAuthenticatedContext { context in
+        try await AuthenticatedTestContext.run(
+            migrations: MiniDexDB.migrations,
+            roles: .hobbyist,
+        ) { context in
+            try context.app.register(collection: UserProfileController())
+
             try await context.app.testing().test(.GET, "/v1/users/\(context.userID)/profile", beforeRequest: { req in
                 req.headers.bearerAuthorization = .init(token: context.token)
             }, afterResponse: { res async throws in
@@ -18,10 +25,15 @@ struct UserProfileControllerTests {
 
     @Test("can create, fetch, and update profile via user route")
     func profileLifecycle() async throws {
-        try await TestContext.withAuthenticatedContext { context in
+        try await AuthenticatedTestContext.run(
+            migrations: MiniDexDB.migrations,
+            roles: .hobbyist,
+        ) { context in
             let app = context.app
             let token = context.token
             let userID = context.userID
+
+            try app.register(collection: UserProfileController())
 
             let initialAvatar = URL(string: "https://cdn.minidex.dev/avatars/initial.png")!
             var createdProfileID: UUID?

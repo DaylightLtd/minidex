@@ -1,15 +1,22 @@
+import MiniDexDB
 @testable import MiniDexServer
 import Foundation
 import Testing
 import VaporTesting
+import VaporTestingUtils
 
 @Suite("GameSystem Integration", .serialized)
 struct GameSystemIntegrationTests {
     @Test("cataloguer can CRUD game systems via API")
     func cataloguerCRUD() async throws {
-        try await TestContext.withAuthenticatedContext(roles: .cataloguer) { context in
+        try await AuthenticatedTestContext.run(
+            migrations: MiniDexDB.migrations,
+            roles: .cataloguer,
+        ) { context in
             let app = context.app
             let token = context.token
+
+            try app.register(collection: GameSystemController())
 
             var createdID: UUID?
 
