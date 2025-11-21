@@ -22,14 +22,14 @@ public struct UserController: RouteCollection, Sendable {
                 id: $0.id,
                 displayName: $0.displayName,
                 roles: $0.roles.rawValue,
-                isActive: $0.isActive
+                isActive: $0.isActive,
             )
         }
     )
 
     public func boot(routes: any RoutesBuilder) throws {
         let root = routes
-            .grouped("v1", "user")
+            .grouped("v1", "users")
             .grouped(TokenAuthenticator())
             .grouped(AuthUser.guardMiddleware())
             .grouped(RequireAdminMiddleware())
