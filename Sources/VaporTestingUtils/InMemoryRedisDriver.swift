@@ -244,4 +244,3 @@ private final class InMemoryRedisClient: RedisClient {
         eventLoop.makeFailedFuture(InMemoryRedisError.unsupportedCommand("PUNSUBSCRIBE"))
     }
 }
-

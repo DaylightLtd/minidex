@@ -6,6 +6,8 @@ import Redis
 import Vapor
 import VaporRedisUtils
 import VaporUtils
+import VaporTesting
+import VaporTestingUtils
 import Testing
 
 @Suite("TokenAuthenticator", .serialized)
@@ -14,8 +16,8 @@ struct TokenAuthenticatorTests {
 
     @Test("authenticates cached user with valid token")
     func cacheHitReturnsUser() async throws {
-        try await withApp { app, redis in
-            let dbUser = try await AuthAPITestHelpers.createUser(on: app.db, username: "eevee", roles: [.admin])
+        try await AuthAPITestApp.withApp { app, redis in
+            let dbUser = try await AuthenticatedTestContext.createUser(on: app.db, username: "eevee", roles: .admin)
             let (encoded, raw) = makeTokenValue("cached-token")
             let token = try await storeToken(for: dbUser, rawToken: raw, expiresIn: 3600, isRevoked: false, on: app.db)
 
@@ -33,8 +35,8 @@ struct TokenAuthenticatorTests {
 
     @Test("authenticates database token and caches result")
     func databaseTokenAuthenticatesAndCaches() async throws {
-        try await withApp { app, redis in
-            let dbUser = try await AuthAPITestHelpers.createUser(on: app.db, username: "misty", roles: [.admin])
+        try await AuthAPITestApp.withApp { app, redis in
+            let dbUser = try await AuthenticatedTestContext.createUser(on: app.db, username: "misty", roles: .admin)
             let (encoded, raw) = makeTokenValue("db-token")
             try await storeToken(for: dbUser, rawToken: raw, expiresIn: 3600, isRevoked: false, on: app.db)
 
@@ -59,8 +61,8 @@ struct TokenAuthenticatorTests {
 
     @Test("revoked token is rejected")
     func revokedTokenRejected() async throws {
-        try await withApp { app, _ in
-            let dbUser = try await AuthAPITestHelpers.createUser(on: app.db, username: "brock", roles: [.admin])
+        try await AuthAPITestApp.withApp { app, redis in
+            let dbUser = try await AuthenticatedTestContext.createUser(on: app.db, username: "brock", roles: .admin)
             let (encoded, raw) = makeTokenValue("revoked")
             try await storeToken(for: dbUser, rawToken: raw, expiresIn: 3600, isRevoked: true, on: app.db)
 
@@ -72,8 +74,8 @@ struct TokenAuthenticatorTests {
 
     @Test("expired token is rejected")
     func expiredTokenRejected() async throws {
-        try await withApp { app, _ in
-            let dbUser = try await AuthAPITestHelpers.createUser(on: app.db, username: "tracey", roles: [.admin])
+        try await AuthAPITestApp.withApp { app, redis in
+            let dbUser = try await AuthenticatedTestContext.createUser(on: app.db, username: "tracey", roles: .admin)
             let (encoded, raw) = makeTokenValue("expired")
             try await storeToken(for: dbUser, rawToken: raw, expiresIn: -10, isRevoked: false, on: app.db)
 
@@ -85,7 +87,7 @@ struct TokenAuthenticatorTests {
 
     @Test("invalid bearer values are ignored")
     func invalidBearerIgnored() async throws {
-        try await withApp { app, _ in
+        try await AuthAPITestApp.withApp { app, redis in
             let req = makeRequest(app: app, bearerToken: "not-base64@@@")
             try await authenticator.authenticate(bearer: .init(token: "not-base64@@@"), for: req)
             #expect(req.auth.has(AuthUser.self) == false)
@@ -94,8 +96,8 @@ struct TokenAuthenticatorTests {
 
     @Test("cache hit with revoked token is rejected")
     func cacheHitWithRevokedTokenRejected() async throws {
-        try await withApp { app, redis in
-            let dbUser = try await AuthAPITestHelpers.createUser(on: app.db, username: "dawn", roles: [.admin])
+        try await AuthAPITestApp.withApp { app, redis in
+            let dbUser = try await AuthenticatedTestContext.createUser(on: app.db, username: "dawn", roles: .admin)
             let (encoded, raw) = makeTokenValue("cached-but-revoked")
             let token = try await storeToken(for: dbUser, rawToken: raw, expiresIn: 3600, isRevoked: false, on: app.db)
 
@@ -118,8 +120,8 @@ struct TokenAuthenticatorTests {
 
     @Test("cache hit with expired token is rejected")
     func cacheHitWithExpiredTokenRejected() async throws {
-        try await withApp { app, redis in
-            let dbUser = try await AuthAPITestHelpers.createUser(on: app.db, username: "paul", roles: [.admin])
+        try await AuthAPITestApp.withApp { app, redis in
+            let dbUser = try await AuthenticatedTestContext.createUser(on: app.db, username: "paul", roles: .admin)
             let (encoded, raw) = makeTokenValue("cached-but-expired")
             let token = try await storeToken(for: dbUser, rawToken: raw, expiresIn: 3600, isRevoked: false, on: app.db)
 
@@ -142,7 +144,7 @@ struct TokenAuthenticatorTests {
 
     @Test("cache hit with missing token is rejected")
     func cacheHitWithMissingTokenRejected() async throws {
-        try await withApp { app, redis in
+        try await AuthAPITestApp.withApp { app, redis in
             let tokenID = UUID()
             let cached = AuthUser(id: UUID(), roles: [.admin], isActive: true, tokenID: tokenID)
 
@@ -158,28 +160,6 @@ struct TokenAuthenticatorTests {
 }
 
 // MARK: - Helpers
-
-private func withApp(_ test: @escaping (Application, InMemoryRedisDriver) async throws -> Void) async throws {
-    let app = try await Application.makeTesting()
-    let redisDriver = InMemoryRedisDriver()
-    try await TestDatabaseHelpers.migrate(app)
-    app.useRedisClientOverride { request in
-        redisDriver.makeClient(on: request.eventLoop)
-    }
-
-    do {
-        try await test(app, redisDriver)
-    } catch {
-        app.clearRedisClientOverride()
-        try await TestDatabaseHelpers.reset(app)
-        try await app.asyncShutdown()
-        throw error
-    }
-
-    app.clearRedisClientOverride()
-    try await TestDatabaseHelpers.reset(app)
-    try await app.asyncShutdown()
-}
 
 private func makeRequest(app: Application, bearerToken: String) -> Request {
     let req = Request(application: app, on: app.eventLoopGroup.next())

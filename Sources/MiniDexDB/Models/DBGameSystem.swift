@@ -1,4 +1,5 @@
 import Fluent
+import Foundation
 
 public final class DBGameSystem: Model, @unchecked Sendable {
     public static let schema = "game_systems"
