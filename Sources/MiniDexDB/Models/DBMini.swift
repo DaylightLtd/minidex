@@ -1,4 +1,5 @@
 import Fluent
+import Foundation
 
 public final class DBMini: Model, @unchecked Sendable {
     public static let schema = "minis"

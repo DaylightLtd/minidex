@@ -49,6 +49,7 @@ let package = Package(
         .target(
             name: "MiniDexDB",
             dependencies: [
+                .target(name: "AuthDB"),
                 .product(name: "Fluent", package: "fluent"),
             ],
             swiftSettings: swiftSettings,
