@@ -62,7 +62,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const redirectTo = searchParams.get("returnUrl") || "/dashboard";
+  const redirectTo = normalizeReturnUrl(searchParams.get("returnUrl"));
 
   const loginMutation = useApiMutation({
     mutationFn: (credentials: LoginPayload) =>
@@ -164,4 +164,11 @@ function LoginForm() {
       </Paper>
     </Container>
   );
+}
+
+function normalizeReturnUrl(value: string | null) {
+  if (!value || value === "/login") {
+    return "/dashboard";
+  }
+  return value;
 }
