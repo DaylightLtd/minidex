@@ -1,21 +1,19 @@
 import { ApiError } from "@/lib/api-client";
+import { errorMessages } from "@/lib/messages/errors";
 
 type FriendlyErrorOptions = {
   genericMessage?: string;
 };
 
-export function getFriendlyErrorMessage(
-  error: unknown,
-  options: FriendlyErrorOptions = {},
-) {
-  const generic = options.genericMessage ?? "Something went wrong. Please try again.";
+export function getFriendlyErrorMessage(error: unknown, options: FriendlyErrorOptions = {}) {
+  const generic = options.genericMessage ?? errorMessages.generic;
 
   if (error instanceof ApiError) {
     if (error.status >= 500) {
-      return "Our servers are having trouble right now. Please try again shortly.";
+      return errorMessages.server;
     }
     if (error.status === 401 || error.status === 403) {
-      return "Your session has expired. Please login again.";
+      return errorMessages.sessionExpired;
     }
     return error.message || generic;
   }

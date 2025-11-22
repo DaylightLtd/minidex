@@ -3,7 +3,6 @@
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import {
-  Alert,
   Box,
   Button,
   Container,
@@ -15,13 +14,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 
 import { loginMessages as m } from "@/app/login/messages";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/lib/hooks/use-api-mutation";
 import { queryKeys } from "@/lib/query-keys";
 
 type LoginResponse = {
@@ -60,12 +60,11 @@ function LoginForm() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const redirectTo = searchParams.get("returnUrl") || "/dashboard";
 
-  const loginMutation = useMutation({
+  const loginMutation = useApiMutation({
     mutationFn: (credentials: LoginPayload) =>
       api.post<LoginResponse, LoginPayload>("/auth/login", credentials),
     onSuccess: async () => {
@@ -73,30 +72,19 @@ function LoginForm() {
       router.replace(redirectTo);
       router.refresh();
     },
-    onError: (err) => {
-      setError(err instanceof Error ? err.message : "Unable to login");
-    },
   });
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-
-    try {
-      await loginMutation.mutateAsync({ username, password });
-    } catch {
-      // error handled in onError
-    }
+    loginMutation.mutate({ username, password });
   }
 
   const isFormValid = username.trim().length > 0 && password.trim().length > 0;
   const handleUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (error) setError(null);
     if (loginMutation.isError) loginMutation.reset();
     setUsername(event.target.value);
   };
   const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (error) setError(null);
     if (loginMutation.isError) loginMutation.reset();
     setPassword(event.target.value);
   };
@@ -124,12 +112,6 @@ function LoginForm() {
               </MuiLink>
             </Typography>
           </Box>
-
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
 
           <TextField
             label={m.usernameLabel}
