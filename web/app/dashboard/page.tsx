@@ -21,7 +21,7 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import LogoutButton from "@/app/components/LogoutButton";
 import { useCurrentUser } from "@/app/hooks/use-current-user";
@@ -50,6 +50,10 @@ export default function DashboardPage() {
   const isMenuOpen = Boolean(menuAnchor);
 
   const showLoading = isPending && !error;
+  const initials = useMemo(
+    () => getInitials(user.displayName),
+    [user.displayName],
+  );
 
   function handleAvatarClick(event: React.MouseEvent<HTMLElement>) {
     setMenuAnchor(event.currentTarget);
@@ -72,14 +76,16 @@ export default function DashboardPage() {
         sx={{
           width: 260,
           borderRight: (theme) => `1px solid ${theme.palette.divider}`,
-          p: 3,
+          bgcolor: "background.default",
+          px: 2,
+          py: 1,
           display: "flex",
           flexDirection: "column",
           gap: 4,
         }}
       >
         <Box>
-          <Typography variant="h5" fontWeight={700}>
+          <Typography variant="h5" fontWeight={700} color="primary.main">
             MiniDex
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -87,21 +93,12 @@ export default function DashboardPage() {
           </Typography>
         </Box>
 
-        <List sx={{ flexGrow: 1 }}>
+        <List sx={{ flexGrow: 1, p: 0 }}>
           <ListItemButton
             component={Link}
             href="/dashboard"
             selected
-            sx={{
-              borderRadius: 2,
-              "&.Mui-selected": {
-                bgcolor: "primary.main",
-                color: "primary.contrastText",
-                "& .MuiListItemIcon-root": {
-                  color: "primary.contrastText",
-                },
-              },
-            }}
+            sx={{ borderRadius: 1 }}
           >
             <ListItemIcon>
               <HomeOutlined fontSize="small" />
@@ -120,32 +117,24 @@ export default function DashboardPage() {
           component="header"
           sx={{
             display: "flex",
-            alignItems: "center",
+            alignItems: "end",
             justifyContent: "space-between",
-            px: 4,
-            py: 3,
-            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+            pl: 4,
+            pr: 2,
+            pt: 1,
+            bgcolor: "background.default",
           }}
         >
-          <Box>
-            <Typography variant="subtitle2" color="text.secondary">
-              Dashboard
-            </Typography>
-            <Typography variant="h4" fontWeight={600}>
-              Welcome back, {user.displayName?.split(" ")[0] ?? "there"}!
-            </Typography>
-          </Box>
+          <Box></Box>
 
           <IconButton
             onClick={handleAvatarClick}
-            size="large"
-            sx={{ border: (theme) => `1px solid ${theme.palette.divider}` }}
           >
             <Avatar
               src="/images/avatar-placeholder.png"
               alt={user.displayName ?? "User avatar"}
             >
-              {getInitials(user.displayName)}
+              {initials}
             </Avatar>
           </IconButton>
 
@@ -156,25 +145,32 @@ export default function DashboardPage() {
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             transformOrigin={{ vertical: "top", horizontal: "right" }}
           >
-            <Box px={2} py={1.5}>
+            <Box sx={{ px: 2, py: 1 }}>
               <Typography variant="subtitle2">{user.displayName}</Typography>
               <Typography variant="body2" color="text.secondary">
                 {placeholderUser.email}
               </Typography>
             </Box>
             <Divider />
-            <MenuItem component={Link} href="/dashboard" onClick={handleMenuClose}>
+            <MenuItem
+              component={Link}
+              href="/dashboard"
+              onClick={handleMenuClose}
+            >
               Home
             </MenuItem>
-            <MenuItem component={Link} href="/account" onClick={handleMenuClose}>
+            <MenuItem
+              component={Link}
+              href="/account"
+              onClick={handleMenuClose}
+            >
               Profile
             </MenuItem>
-            <MenuItem disableRipple sx={{ p: 0 }}>
+            <MenuItem disableRipple>
               <LogoutButton
                 variant="text"
                 fullWidth
                 onLoggedOut={handleMenuClose}
-                sx={{ justifyContent: "flex-start", px: 2, color: "text.primary" }}
               >
                 Logout
               </LogoutButton>
@@ -182,10 +178,16 @@ export default function DashboardPage() {
           </Menu>
         </Box>
 
-        <Box component="main" sx={{ flex: 1, p: 4 }}>
+        <Box component="main" sx={{ flex: 1, px: 4 }}>
+          <Box sx={{ pb: 2 }}>
+            <Typography variant="h6" fontWeight={600}>
+              Welcome back, {user.displayName?.split(" ")[0] ?? "there"}!
+            </Typography>
+          </Box>
+
           <Stack spacing={3}>
             {showLoading && (
-              <Box display="flex" justifyContent="center" py={4}>
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
                 <CircularProgress />
               </Box>
             )}
@@ -203,13 +205,16 @@ export default function DashboardPage() {
                   Account Overview
                 </Typography>
                 <Typography variant="body2" color="text.secondary" mb={3}>
-                  This section will summarize engagement details once the API integration is
-                  complete.
+                  This section will summarize engagement details once the API
+                  integration is complete.
                 </Typography>
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
                   <UserInfoItem label="Name" value={user.displayName} />
                   <UserInfoItem label="Email" value={placeholderUser.email} />
-                  <UserInfoItem label="Role" value={placeholderUser.roleTitle} />
+                  <UserInfoItem
+                    label="Role"
+                    value={placeholderUser.roleTitle}
+                  />
                 </Stack>
               </CardContent>
             </Card>
@@ -220,10 +225,15 @@ export default function DashboardPage() {
                   Quick Actions
                 </Typography>
                 <Typography variant="body2" color="text.secondary" mb={2}>
-                  Use these shortcuts to navigate once the full experience is ready.
+                  Use these shortcuts to navigate once the full experience is
+                  ready.
                 </Typography>
-                <Stack direction="row" spacing={2}>
-                  <Button variant="contained" component={Link} href="/dashboard">
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                  <Button
+                    variant="contained"
+                    component={Link}
+                    href="/dashboard"
+                  >
                     Go to Home
                   </Button>
                   <Button variant="outlined" component={Link} href="/account">
@@ -247,7 +257,7 @@ function UserInfoItem({
   value?: string | null;
 }) {
   return (
-    <Box>
+    <Box sx={{ minWidth: 200 }}>
       <Typography variant="overline" color="text.secondary">
         {label}
       </Typography>
