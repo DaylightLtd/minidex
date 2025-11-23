@@ -7,8 +7,6 @@ import { queryKeys } from "@/lib/query-keys";
 
 export type CurrentUser = {
   id: string;
-  displayName?: string | null;
-  avatarUrl?: string | null;
   roles: number;
   isActive: boolean;
 };
