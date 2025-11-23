@@ -15,7 +15,7 @@ enum AuthAPITestHelpers {
         req.headers.bearerAuthorization = .init(token: token)
     }
 
-    static func assertCacheCleared(for login: TestLoginResponse, redis: InMemoryRedisDriver) throws {
+    static func assertCacheCleared(for login: AuthOut, redis: InMemoryRedisDriver) throws {
         let snapshot = redis.snapshot()
         let userKey = RedisKey("token:\(login.accessToken)")
         guard let hashedAccessToken = TokenAuthenticator.hashAccessToken(login.accessToken) else {

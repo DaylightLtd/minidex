@@ -249,7 +249,8 @@ struct AuthControllerTests {
 
     @Test("registration succeeds for new username")
     func registrationSucceedsForNewUser() async throws {
-        try await AuthAPITestApp.withApp(newUserRoles: .admin) { app, _ in
+        try await AuthAPITestApp.withApp(newUserRoles: .admin) { app, redis in
+            var response: AuthOut?
             try await app.testing().test(
                 .POST,
                 "v1/auth/register",
@@ -260,10 +261,16 @@ struct AuthControllerTests {
                         "confirmPassword": "Password!23"
                     ])
                 },
-                afterResponse: { res async in
+                afterResponse: { res async throws in
                     #expect(res.status == .created)
+                    response = try res.content.decode(AuthOut.self)
                 }
             )
+
+            guard let response else {
+                Issue.record("Register response missing")
+                throw Abort(.internalServerError)
+            }
 
             let credential = try await DBCredential.query(on: app.db)
                 .filter(\.$identifier == "bonnie")
@@ -272,6 +279,26 @@ struct AuthControllerTests {
             let user = try await credential?.$user.get(on: app.db)
             #expect(user?.isActive == true)
             #expect(user?.roles == Roles.admin.rawValue)
+
+            let tokens = try await DBUserToken.query(on: app.db).all()
+            #expect(tokens.count == 1)
+
+            let snapshot = redis.snapshot()
+            let userKey = RedisKey("token:\(response.accessToken)")
+            guard let hash = TokenAuthenticator.hashAccessToken(response.accessToken) else {
+                Issue.record("Failed to hash access token")
+                return
+            }
+            let hashedKey = RedisKey("token_hash:\(hash.base64URLEncodedString())")
+
+            let cachedUserData = try #require(snapshot.entries[userKey]?.data)
+            let cachedUser = try JSONDecoder().decode(AuthUser.self, from: cachedUserData)
+            #expect(cachedUser.id == response.userId)
+
+            #expect(snapshot.entries[hashedKey]?.data != nil)
+
+            let ttl = snapshot.setexCalls.filter { $0.key == userKey }.first?.ttl
+            #expect(ttl == response.expiresIn)
         }
     }
 }

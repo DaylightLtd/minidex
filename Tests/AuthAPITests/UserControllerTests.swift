@@ -339,7 +339,7 @@ struct UserControllerTests {
     }
 }
 
-private func makeAdmin(app: Application) async throws -> (DBUser, TestLoginResponse) {
+private func makeAdmin(app: Application) async throws -> (DBUser, AuthOut) {
     let admin = try await AuthenticatedTestContext.createUser(
         on: app.db,
         username: "admin",
