@@ -25,8 +25,7 @@ export default function AuthenticatedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { data: profile, isLoading } = useCurrentProfile();
-
+  const { data: profile, isLoading: isProfileLoading } = useCurrentProfile();
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const isMenuOpen = Boolean(menuAnchor);
 
@@ -92,11 +91,11 @@ export default function AuthenticatedLayout({
             bgcolor: "background.default",
           }}
         >
-          <IconButton onClick={handleAvatarClick} disabled={isLoading}>
+          <IconButton onClick={handleAvatarClick} disabled={isProfileLoading}>
             <UserAvatar
               displayName={displayName}
               avatarURL={profile?.avatarURL}
-              isLoading={isLoading}
+              isLoading={isProfileLoading}
             />
           </IconButton>
 

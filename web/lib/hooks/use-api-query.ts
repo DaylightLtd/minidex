@@ -10,6 +10,7 @@ import { enqueueSnackbar } from "notistack";
 
 import { api, ApiRequestOptions } from "@/lib/api-client";
 import { getFriendlyErrorMessage } from "@/lib/errors";
+import { getSlowDelay } from "@/lib/utils/dev-helpers";
 
 type UseApiQueryOptions<TResponse> = Omit<
   UseQueryOptions<TResponse>,
@@ -36,10 +37,18 @@ export function useApiQuery<TResponse = unknown>(
     ...rest
   } = options;
 
+  // Check if slowdown is enabled (dev mode only)
+  const slowConfig = getSlowDelay();
+
   return useQuery<TResponse>({
     ...rest,
     queryKey,
     queryFn: async () => {
+      // Add artificial delay in development mode if ?slow param is present
+      if (slowConfig?.enabled) {
+        await new Promise((resolve) => setTimeout(resolve, slowConfig.delay));
+      }
+
       try {
         return await api.get<TResponse>(path, request);
       } catch (error) {

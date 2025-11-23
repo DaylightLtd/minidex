@@ -79,6 +79,7 @@ See `app/api/[...path]/route.ts` for implementation details.
 Both `useApiQuery` and `useApiMutation` automatically show error snackbars for failed requests.
 
 **Suppress error toast:**
+
 ```typescript
 useApiQuery({
   path: "/v1/resource",
@@ -87,6 +88,7 @@ useApiQuery({
 ```
 
 **Custom error message:**
+
 ```typescript
 useApiMutation({
   method: "post",
@@ -96,6 +98,7 @@ useApiMutation({
 ```
 
 **Handle errors gracefully:**
+
 ```typescript
 useApiQuery({
   path: "/v1/resource",
@@ -127,3 +130,21 @@ All hooks are fully typed. Always provide type parameters:
 useApiQuery<ResponseType>({ ... })
 useApiMutation<ResponseType, PayloadType>({ ... })
 ```
+
+## Development Tools
+
+### Slow Query Tool
+
+In development mode, you can artificially delay queries to test loading states (e.g., skeleton animations):
+
+- Add `?slow=true` to your URL for a 3-second delay (default)
+- Add `?slow=<int>` for a custom delay in milliseconds
+
+**Examples:**
+
+- `http://localhost:3000/home?slow=true` - 3 second delay
+- `http://localhost:3000/home?slow=5000` - 5 second delay
+
+The delay happens before the API call, so TanStack Query will show `isLoading: true` during the delay period. This is useful for testing skeleton loaders and other loading UI states.
+
+**Note:** This tool only works in development mode and has zero impact on production builds.

@@ -11,13 +11,6 @@ export type CurrentProfile = {
   avatarURL?: string | null;
 };
 
-const placeholderProfile: CurrentProfile = {
-  id: "",
-  userID: "",
-  displayName: "User",
-  avatarURL: null,
-};
-
 type UseCurrentProfileOptions = {
   enabled?: boolean;
 };
@@ -25,15 +18,14 @@ type UseCurrentProfileOptions = {
 export function useCurrentProfile(options?: UseCurrentProfileOptions) {
   const { enabled = true } = options ?? {};
 
-  return useApiQuery<CurrentProfile>({
+  return useApiQuery<CurrentProfile | null>({
     queryKey: queryKeys.currentProfile,
     path: "/v1/me",
     request: { cache: "no-store" },
     enabled,
-    placeholderData: placeholderProfile,
     onError: (error) => {
       if (error instanceof ApiError && error.status === 404) {
-        return placeholderProfile;
+        return null;
       }
       throw error;
     },

@@ -32,7 +32,14 @@ export function UserAvatar({
   }
 
   if (isLoading) {
-    return <Skeleton variant="circular" width={width} height={height} />;
+    return (
+      <Skeleton
+        variant="circular"
+        animation="wave"
+        width={width}
+        height={height}
+      />
+    );
   }
 
   return (
