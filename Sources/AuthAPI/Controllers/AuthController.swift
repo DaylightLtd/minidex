@@ -5,10 +5,10 @@ import Vapor
 import VaporRedisUtils
 import VaporUtils
 
-struct LoginOut: Content {
-    var accessToken: String
-    var expiresIn: Int
-    var userId: UUID
+public struct AuthOut: Content {
+    public var accessToken: String
+    public var expiresIn: Int
+    public var userId: UUID
 }
 
 struct RegisterIn: Content, Validatable {
@@ -25,10 +25,16 @@ struct RegisterIn: Content, Validatable {
 public struct AuthController: RouteCollection, Sendable {
     let tokenLength: Int
     let accessTokenExpiration: TimeInterval
+    let newUserRoles: Roles
 
-    public init(tokenLength: Int, accessTokenExpiration: TimeInterval) {
+    public init(
+        tokenLength: Int,
+        accessTokenExpiration: TimeInterval,
+        newUserRoles: Roles,
+    ) {
         self.tokenLength = tokenLength
         self.accessTokenExpiration = accessTokenExpiration
+        self.newUserRoles = newUserRoles
     }
 
     public func boot(routes: any RoutesBuilder) throws {
@@ -46,7 +52,7 @@ public struct AuthController: RouteCollection, Sendable {
     }
 
     @Sendable
-    func login(req: Request) async throws -> LoginOut {
+    func login(req: Request) async throws -> AuthOut {
         var user = try req.auth.require(AuthUser.self)
 
         if !user.isActive {
@@ -56,32 +62,25 @@ public struct AuthController: RouteCollection, Sendable {
             throw Abort(.forbidden, reason: "User not authorized to perform this action")
         }
 
-        let tokenValue = generateToken(length: tokenLength)
-        let hashedTokenValue = Data(SHA256.hash(data: tokenValue))
-        let expiresAt = Date() + accessTokenExpiration
-
-        let token = DBUserToken(
+        let token = generateToken(length: tokenLength)
+        let userToken = try await createUserToken(
             userID: user.id,
-            type: .access,
-            value: hashedTokenValue,
-            expiresAt: expiresAt
+            token: token,
+            db: req.db,
         )
-        try await token.save(on: req.db)
-
-        let accessToken = tokenValue.base64URLEncodedString()
-        user.tokenID = try token.requireID()
+        user.tokenID = try userToken.requireID()
 
         await req.redisClient.cache(
-            accessToken: accessToken,
-            hashedAccessToken: hashedTokenValue.base64URLEncodedString(),
+            accessToken: token.rawEncoded,
+            hashedAccessToken: token.hashedEncoded,
             user: user,
             accessTokenExpiration: accessTokenExpiration,
             logger: req.logger,
         )
 
         return .init(
-            accessToken: accessToken,
-            expiresIn: Int(token.expiresAt.timeIntervalSinceNow),
+            accessToken: token.rawEncoded,
+            expiresIn: Int(accessTokenExpiration),
             userId: user.id,
         )
     }
@@ -102,7 +101,7 @@ public struct AuthController: RouteCollection, Sendable {
     }
 
     @Sendable
-    func register(req: Request) async throws -> HTTPStatus {
+    func register(req: Request) async throws -> Response {
         try RegisterIn.validate(content: req)
         let input = try req.content.decode(RegisterIn.self)
         guard input.password == input.confirmPassword else {
@@ -118,28 +117,93 @@ public struct AuthController: RouteCollection, Sendable {
             throw Abort(.conflict, reason: "Username already taken")
         }
 
-        try await req.db.transaction { db in
-            let user = DBUser(roles: 0, isActive: false)
+        let token = generateToken(length: tokenLength)
+        let (userID, userToken) = try await req.db.transaction { db in
+            let user = DBUser(roles: newUserRoles.rawValue, isActive: true)
             try await user.save(on: db)
+            let userID = try user.requireID()
 
             let credential = DBCredential(
-                userID: try user.requireID(),
+                userID: userID,
                 type: .usernameAndPassword,
                 identifier: input.username,
                 secret: try Bcrypt.hash(input.password)
             )
             try await credential.save(on: db)
+
+            let userToken = try await createUserToken(
+                userID: userID,
+                token: token,
+                db: db
+            )
+            return (userID, userToken)
         }
 
-        return .created
+        req.logger.debug("Registered username: \(input.username) with ID: \(userID)")
+
+        let user = try AuthUser(
+            id: userID,
+            roles: newUserRoles,
+            isActive: true,
+            tokenID: userToken.requireID(),
+        )
+        req.auth.login(user)
+
+        await req.redisClient.cache(
+            accessToken: token.rawEncoded,
+            hashedAccessToken: token.hashedEncoded,
+            user: user,
+            accessTokenExpiration: userToken.expiresAt.timeIntervalSinceNow,
+            logger: req.logger,
+        )
+
+        let response = Response(status: .created)
+        let content = AuthOut(
+            accessToken: token.rawEncoded,
+            expiresIn: Int(userToken.expiresAt.timeIntervalSinceNow),
+            userId: userID,
+        )
+        try response.content.encode(content)
+        return response
     }
 
-    private func generateToken(length: Int) -> Data {
+    private func createUserToken(
+        userID: UUID,
+        token: Token,
+        db: any Database,
+    ) async throws -> DBUserToken {
+        let token = DBUserToken(
+            userID: userID,
+            type: .access,
+            value: token.hashed,
+            expiresAt: Date() + accessTokenExpiration
+        )
+        try await token.save(on: db)
+        return token
+    }
+
+    struct Token {
+        /// Base64 encoded raw access token that is returned to the API user
+        let rawEncoded: String
+        /// Hashed binary access token that is stored in DB
+        let hashed: Data
+        /// Base64 encoded hashed access token used for cache invalidation
+        let hashedEncoded: String
+    }
+
+    private func generateToken(length: Int) -> Token {
         var bytes = [UInt8](repeating: 0, count: length)
         var rng = SystemRandomNumberGenerator()
         for i in 0..<length {
             bytes[i] = UInt8.random(in: 0...255, using: &rng)
         }
-        return Data(bytes)
+        let raw = Data(bytes)
+        let hashed = Data(SHA256.hash(data: raw))
+
+        return .init(
+            rawEncoded: raw.base64URLEncodedString(),
+            hashed: hashed,
+            hashedEncoded: hashed.base64URLEncodedString(),
+        )
     }
 }

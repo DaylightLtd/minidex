@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { handleUpstreamError, respondWithError } from "@/app/api/auth/utils";
 import { clearAuthCookie, getAuthTokenFromRequest } from "@/lib/auth-cookies";
 import { getApiUrl } from "@/lib/env";
 
@@ -23,12 +24,7 @@ export async function POST(request: NextRequest) {
 
     if (!upstream.ok) {
       const payload = await upstream.json().catch(() => ({}));
-      const message =
-        payload.message ||
-        payload.error ||
-        payload.reason ||
-        "Failed to logout";
-      return respondWithError(upstream.status || 500, message);
+      return handleUpstreamError(upstream, payload, "Failed to logout");
     }
   } catch (error) {
     console.error("Logout route error:", error);
@@ -40,12 +36,6 @@ export async function POST(request: NextRequest) {
 
 function respondWithSuccess(): NextResponse {
   const response = NextResponse.json({ success: true }, { status: 200 });
-  clearAuthCookie(response);
-  return response;
-}
-
-function respondWithError(status: number, message: string): NextResponse {
-  const response = NextResponse.json({ error: message }, { status });
   clearAuthCookie(response);
   return response;
 }

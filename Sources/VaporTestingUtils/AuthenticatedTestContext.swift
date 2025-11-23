@@ -65,6 +65,7 @@ public struct AuthenticatedTestContext {
         try app.register(collection: AuthController(
             tokenLength: tokenLength,
             accessTokenExpiration: accessTokenExpiration,
+            newUserRoles: roles,
         ))
 
         let user = try await createUser(
@@ -124,8 +125,8 @@ public struct AuthenticatedTestContext {
         app: Application,
         username: String,
         password: String
-    ) async throws -> TestLoginResponse {
-        var response: TestLoginResponse?
+    ) async throws -> AuthOut {
+        var response: AuthOut?
         try await app.testing().test(
             .POST,
             "/v1/auth/login",
@@ -134,7 +135,7 @@ public struct AuthenticatedTestContext {
             },
             afterResponse: { res async throws in
                 #expect(res.status == .ok)
-                response = try res.content.decode(TestLoginResponse.self)
+                response = try res.content.decode(AuthOut.self)
             }
         )
         guard let loginResponse = response else {
@@ -143,10 +144,4 @@ public struct AuthenticatedTestContext {
         }
         return loginResponse
     }
-}
-
-public struct TestLoginResponse: Content {
-    public let accessToken: String
-    public let expiresIn: Int
-    public let userId: UUID
 }
