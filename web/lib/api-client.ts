@@ -189,6 +189,7 @@ type ApiQueryOptionsConfig<TResponse> = {
   path: string;
   request?: ApiRequestOptions;
   behavior?: QueryBehaviorOverrides;
+  onError?: (error: unknown) => TResponse;
 };
 
 export function apiQueryOptions<TResponse>({
@@ -196,10 +197,20 @@ export function apiQueryOptions<TResponse>({
   path,
   request,
   behavior,
+  onError,
 }: ApiQueryOptionsConfig<TResponse>) {
   return queryOptions({
     queryKey,
-    queryFn: () => apiRequest<TResponse>(path, request),
+    queryFn: async () => {
+      try {
+        return await apiRequest<TResponse>(path, request);
+      } catch (error) {
+        if (onError) {
+          return onError(error);
+        }
+        throw error;
+      }
+    },
     ...DEFAULT_QUERY_BEHAVIOR,
     ...behavior,
   });
