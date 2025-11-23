@@ -1,15 +1,9 @@
 "use client";
 
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import {
   Box,
   Button,
-  Container,
-  IconButton,
-  InputAdornment,
   Link as MuiLink,
-  Paper,
   Stack,
   TextField,
   Typography,
@@ -19,7 +13,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 
+import { AuthCard } from "@/app/components/AuthCard";
+import { PasswordField } from "@/app/components/PasswordField";
 import { loginMessages as m } from "@/app/login/messages";
+import { normalizeReturnUrl } from "@/app/utils/normalize-return-url";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/lib/hooks/use-api-mutation";
 import { queryKeys } from "@/lib/query-keys";
@@ -33,14 +30,9 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <Container
-          maxWidth="sm"
-          sx={{ display: "flex", alignItems: "center", minHeight: "100vh" }}
-        >
-          <Paper elevation={1} sx={{ p: 4, width: "100%" }}>
-            <Typography variant="h5">Loading...</Typography>
-          </Paper>
-        </Container>
+        <AuthCard maxWidth="sm" elevation={1}>
+          <Typography variant="h5">Loading...</Typography>
+        </AuthCard>
       }
     >
       <LoginForm />
@@ -60,7 +52,6 @@ function LoginForm() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
   const redirectTo = normalizeReturnUrl(searchParams.get("returnUrl"));
 
@@ -90,97 +81,63 @@ function LoginForm() {
   };
 
   return (
-    <Container
-      maxWidth="xs"
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-      }}
-    >
-      <Paper elevation={3} sx={{ p: { xs: 3, md: 4 }, width: "100%" }}>
-        <Stack spacing={3} component="form" onSubmit={handleSubmit}>
-          <Box textAlign="center">
-            <Typography variant="h4" component="h1" gutterBottom>
-              {m.title}
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {m.subtitlePrefix}{" "}
-              <MuiLink component={Link} href="/register" underline="hover">
-                {m.subtitleLink}
-              </MuiLink>
-            </Typography>
-          </Box>
+    <AuthCard>
+      <Stack spacing={3} component="form" onSubmit={handleSubmit}>
+        <Box textAlign="center">
+          <Typography variant="h4" component="h1" gutterBottom>
+            {m.title}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {m.subtitlePrefix}{" "}
+            <MuiLink component={Link} href="/register" underline="hover">
+              {m.subtitleLink}
+            </MuiLink>
+          </Typography>
+        </Box>
 
-          <TextField
-            label={m.usernameLabel}
-            value={username}
-            onChange={handleUsernameChange}
-            autoComplete="username"
-            autoFocus
+        <TextField
+          label={m.usernameLabel}
+          value={username}
+          onChange={handleUsernameChange}
+          autoComplete="username"
+          autoFocus
+          required
+          fullWidth
+          InputLabelProps={{ shrink: true, required: false }}
+        />
+
+        <Box>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            mb={2}
+          >
+            <Box />
+            <MuiLink component={Link} href="/forgot-password" underline="hover">
+              {m.forgotPassword}
+            </MuiLink>
+          </Box>
+          <PasswordField
+            label={m.passwordLabel}
+            value={password}
+            onChange={handlePasswordChange}
+            autoComplete="current-password"
             required
             fullWidth
             InputLabelProps={{ shrink: true, required: false }}
           />
+        </Box>
 
-          <Box>
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              mb={2}
-            >
-              <Box />
-              <MuiLink
-                component={Link}
-                href="/forgot-password"
-                underline="hover"
-              >
-                {m.forgotPassword}
-              </MuiLink>
-            </Box>
-            <TextField
-              label={m.passwordLabel}
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={handlePasswordChange}
-              autoComplete="current-password"
-              required
-              fullWidth
-              InputLabelProps={{ shrink: true, required: false }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
-
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={!isFormValid || loginMutation.isPending}
-          >
-            {loginMutation.isPending ? m.submitPending : m.submitIdle}
-          </Button>
-        </Stack>
-      </Paper>
-    </Container>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={!isFormValid || loginMutation.isPending}
+        >
+          {loginMutation.isPending ? m.submitPending : m.submitIdle}
+        </Button>
+      </Stack>
+    </AuthCard>
   );
-}
-
-function normalizeReturnUrl(value: string | null) {
-  if (!value || value === "/login") {
-    return "/home";
-  }
-  return value;
 }

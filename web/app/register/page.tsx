@@ -1,15 +1,9 @@
 "use client";
 
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import {
   Box,
   Button,
-  Container,
-  IconButton,
-  InputAdornment,
   Link as MuiLink,
-  Paper,
   Stack,
   TextField,
   Typography,
@@ -19,7 +13,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChangeEvent, FormEvent, Suspense, useState } from "react";
 
+import { AuthCard } from "@/app/components/AuthCard";
+import { PasswordField } from "@/app/components/PasswordField";
 import { registerMessages as m } from "@/app/register/messages";
+import { normalizeReturnUrl } from "@/app/utils/normalize-return-url";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/lib/hooks/use-api-mutation";
 import { queryKeys } from "@/lib/query-keys";
@@ -39,14 +36,9 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <Container
-          maxWidth="sm"
-          sx={{ display: "flex", alignItems: "center", minHeight: "100vh" }}
-        >
-          <Paper elevation={1} sx={{ p: 4, width: "100%" }}>
-            <Typography variant="h5">Loading...</Typography>
-          </Paper>
-        </Container>
+        <AuthCard maxWidth="sm" elevation={1}>
+          <Typography variant="h5">Loading...</Typography>
+        </AuthCard>
       }
     >
       <RegisterForm />
@@ -62,13 +54,11 @@ function RegisterForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const redirectTo = normalizeReturnUrl(searchParams.get("returnUrl"));
 
   const registerMutation = useApiMutation({
-    mutationFn: (payload) =>
+    mutationFn: (payload: RegisterPayload) =>
       api.post<RegisterResponse, RegisterPayload>("/auth/register", payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.currentUser });
@@ -117,105 +107,62 @@ function RegisterForm() {
   }
 
   return (
-    <Container
-      maxWidth="xs"
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-      }}
-    >
-      <Paper elevation={3} sx={{ p: { xs: 3, md: 4 }, width: "100%" }}>
-        <Stack spacing={3} component="form" onSubmit={handleSubmit}>
-          <Box textAlign="center">
-            <Typography variant="h4" component="h1" gutterBottom>
-              {m.title}
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {m.subtitlePrefix}{" "}
-              <MuiLink component={Link} href="/login" underline="hover">
-                {m.subtitleLink}
-              </MuiLink>
-            </Typography>
-          </Box>
+    <AuthCard>
+      <Stack spacing={3} component="form" onSubmit={handleSubmit}>
+        <Box textAlign="center">
+          <Typography variant="h4" component="h1" gutterBottom>
+            {m.title}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {m.subtitlePrefix}{" "}
+            <MuiLink component={Link} href="/login" underline="hover">
+              {m.subtitleLink}
+            </MuiLink>
+          </Typography>
+        </Box>
 
-          <TextField
-            label={m.usernameLabel}
-            value={username}
-            onChange={handleUsernameChange}
-            autoComplete="username"
-            autoFocus
-            required
-            fullWidth
-            InputLabelProps={{ shrink: true, required: false }}
-          />
+        <TextField
+          label={m.usernameLabel}
+          value={username}
+          onChange={handleUsernameChange}
+          autoComplete="username"
+          autoFocus
+          required
+          fullWidth
+          InputLabelProps={{ shrink: true, required: false }}
+        />
 
-          <TextField
-            label={m.passwordLabel}
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={handlePasswordChange}
-            autoComplete="new-password"
-            required
-            fullWidth
-            InputLabelProps={{ shrink: true, required: false }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+        <PasswordField
+          label={m.passwordLabel}
+          value={password}
+          onChange={handlePasswordChange}
+          autoComplete="new-password"
+          required
+          fullWidth
+          InputLabelProps={{ shrink: true, required: false }}
+        />
 
-          <TextField
-            label={m.confirmPasswordLabel}
-            type={showConfirmPassword ? "text" : "password"}
-            value={confirmPassword}
-            onChange={handleConfirmPasswordChange}
-            autoComplete="new-password"
-            required
-            fullWidth
-            InputLabelProps={{ shrink: true, required: false }}
-            error={confirmPasswordError}
-            helperText={confirmPasswordError ? "Passwords must match" : undefined}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowConfirmPassword((prev) => !prev)}
-                    edge="end"
-                  >
-                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+        <PasswordField
+          label={m.confirmPasswordLabel}
+          value={confirmPassword}
+          onChange={handleConfirmPasswordChange}
+          autoComplete="new-password"
+          required
+          fullWidth
+          InputLabelProps={{ shrink: true, required: false }}
+          error={confirmPasswordError}
+          helperText={confirmPasswordError ? "Passwords must match" : undefined}
+        />
 
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={!isFormValid || registerMutation.isPending}
-          >
-            {registerMutation.isPending ? m.submitPending : m.submitIdle}
-          </Button>
-        </Stack>
-      </Paper>
-    </Container>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={!isFormValid || registerMutation.isPending}
+        >
+          {registerMutation.isPending ? m.submitPending : m.submitIdle}
+        </Button>
+      </Stack>
+    </AuthCard>
   );
-}
-
-function normalizeReturnUrl(value: string | null) {
-  if (!value || value === "/login" || value === "/register") {
-    return "/home";
-  }
-  return value;
 }
