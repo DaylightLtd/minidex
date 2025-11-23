@@ -123,7 +123,7 @@ export default function AuthenticatedLayout({
             </MenuItem>
             <MenuItem
               component={Link}
-              href="/account"
+              href="/me"
               onClick={handleMenuClose}
               sx={{ px: 1, mx: 1, mt: 1, borderRadius: 1 }}
             >
