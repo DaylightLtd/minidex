@@ -1,8 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-
-import { ApiError, apiQueryOptions } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-client";
+import { useApiQuery } from "@/lib/hooks/use-api-query";
 import { queryKeys } from "@/lib/query-keys";
 
 export type CurrentProfile = {
@@ -19,29 +18,24 @@ const placeholderProfile: CurrentProfile = {
   avatarURL: null,
 };
 
-const currentProfileQuery = apiQueryOptions<CurrentProfile>({
-  queryKey: queryKeys.currentProfile,
-  path: "/v1/me",
-  request: { cache: "no-store" },
-  onError: (error) => {
-    if (error instanceof ApiError && error.status === 404) {
-      return placeholderProfile;
-    }
-    throw error;
-  },
-});
-
 type UseCurrentProfileOptions = {
   enabled?: boolean;
-  placeholderData?: CurrentProfile;
 };
 
 export function useCurrentProfile(options?: UseCurrentProfileOptions) {
   const { enabled = true } = options ?? {};
 
-  return useQuery<CurrentProfile>({
-    ...currentProfileQuery,
+  return useApiQuery<CurrentProfile>({
+    queryKey: queryKeys.currentProfile,
+    path: "/v1/me",
+    request: { cache: "no-store" },
     enabled,
-    initialData: placeholderProfile,
+    placeholderData: placeholderProfile,
+    onError: (error) => {
+      if (error instanceof ApiError && error.status === 404) {
+        return placeholderProfile;
+      }
+      throw error;
+    },
   });
 }

@@ -3,8 +3,6 @@
  * All requests go through /api/* routes which proxy to the Vapor server
  */
 
-import { type QueryKey, queryOptions } from "@tanstack/react-query";
-
 import { API_BASE_URL } from "@/lib/query-client";
 
 type QueryParams = Record<string, string | number | boolean>;
@@ -175,43 +173,3 @@ export const api = {
     options?: Omit<ApiRequestOptions, "method">,
   ) => apiRequest<TResponse>(path, { ...options, method: "DELETE" }),
 };
-
-const DEFAULT_QUERY_BEHAVIOR = {
-  staleTime: 1000 * 60 * 5, // 5 minutes
-  gcTime: 1000 * 60 * 30, // 30 minutes
-  retry: 1,
-} as const;
-
-type QueryBehaviorOverrides = Partial<typeof DEFAULT_QUERY_BEHAVIOR>;
-
-type ApiQueryOptionsConfig<TResponse> = {
-  queryKey: QueryKey;
-  path: string;
-  request?: ApiRequestOptions;
-  behavior?: QueryBehaviorOverrides;
-  onError?: (error: unknown) => TResponse;
-};
-
-export function apiQueryOptions<TResponse>({
-  queryKey,
-  path,
-  request,
-  behavior,
-  onError,
-}: ApiQueryOptionsConfig<TResponse>) {
-  return queryOptions({
-    queryKey,
-    queryFn: async () => {
-      try {
-        return await apiRequest<TResponse>(path, request);
-      } catch (error) {
-        if (onError) {
-          return onError(error);
-        }
-        throw error;
-      }
-    },
-    ...DEFAULT_QUERY_BEHAVIOR,
-    ...behavior,
-  });
-}
