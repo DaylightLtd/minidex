@@ -3,7 +3,6 @@
 import HomeOutlined from "@mui/icons-material/HomeOutlined";
 import PersonOutlined from "@mui/icons-material/PersonOutlined";
 import {
-  Avatar,
   Box,
   Divider,
   IconButton,
@@ -14,10 +13,11 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import LogoutButton from "@/app/(auth)/components/LogoutButton";
 import { MainNavItem } from "@/app/(auth)/components/MainNavItem";
+import { UserAvatar } from "@/app/(auth)/components/UserAvatar";
 import { useCurrentProfile } from "@/app/(auth)/hooks/use-current-profile";
 
 export default function AuthenticatedLayout({
@@ -25,19 +25,12 @@ export default function AuthenticatedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { data: profile, error: profileError } = useCurrentProfile();
+  const { data: profile, isLoading } = useCurrentProfile();
 
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const isMenuOpen = Boolean(menuAnchor);
-  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
 
   const displayName = profile?.displayName ?? "User";
-  const avatarSrc =
-    profile?.avatarURL && profile.avatarURL !== failedAvatarUrl
-      ? profile.avatarURL
-      : undefined;
-
-  const initials = useMemo(() => getInitials(displayName), [displayName]);
 
   function handleAvatarClick(event: React.MouseEvent<HTMLElement>) {
     setMenuAnchor(event.currentTarget);
@@ -45,12 +38,6 @@ export default function AuthenticatedLayout({
 
   function handleMenuClose() {
     setMenuAnchor(null);
-  }
-
-  function handleAvatarError() {
-    if (profile?.avatarURL) {
-      setFailedAvatarUrl(profile.avatarURL);
-    }
   }
 
   return (
@@ -105,18 +92,12 @@ export default function AuthenticatedLayout({
             bgcolor: "background.default",
           }}
         >
-          <IconButton onClick={handleAvatarClick}>
-            <Avatar
-              src={avatarSrc}
-              alt={displayName}
-              onError={handleAvatarError}
-              sx={{
-                bgcolor: avatarSrc ? undefined : "primary.main",
-                color: avatarSrc ? undefined : "primary.contrastText",
-              }}
-            >
-              {initials}
-            </Avatar>
+          <IconButton onClick={handleAvatarClick} disabled={isLoading}>
+            <UserAvatar
+              displayName={displayName}
+              avatarURL={profile?.avatarURL}
+              isLoading={isLoading}
+            />
           </IconButton>
 
           <Menu
@@ -186,23 +167,9 @@ export default function AuthenticatedLayout({
         </Box>
 
         <Box component="main" sx={{ flex: 1, px: 4, py: 2 }}>
-          {profileError && (
-            <Box mb={2}>
-              <Typography variant="body2" color="error">
-                Unable to fetch user information (showing placeholders).
-              </Typography>
-            </Box>
-          )}
           {children}
         </Box>
       </Box>
     </Box>
   );
-}
-
-function getInitials(name?: string | null) {
-  if (!name) return "U";
-  const parts = name.trim().split(" ").filter(Boolean);
-  const initials = parts.slice(0, 2).map((part) => part[0]);
-  return initials.join("").toUpperCase();
 }
