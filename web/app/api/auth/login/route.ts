@@ -1,18 +1,14 @@
 import { Buffer } from "node:buffer";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-import { clearAuthCookie, setAuthCookie } from "@/lib/auth-cookies";
+import type { AuthResponse } from "@/app/api/auth/types";
+import {
+  createAuthSuccessResponse,
+  handleUpstreamError,
+  respondWithError,
+} from "@/app/api/auth/utils";
 import { getApiUrl } from "@/lib/env";
-
-type LoginResponse = {
-  accessToken?: string;
-  expiresIn?: number;
-  userId?: string;
-  error?: string;
-  message?: string;
-  reason?: string;
-};
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
@@ -34,25 +30,22 @@ export async function POST(request: NextRequest) {
       cache: "no-store",
     });
 
-    const payload = await upstream.json().catch<LoginResponse>(() => ({}));
+    const payload = await upstream.json().catch<AuthResponse>(() => ({}));
 
     if (!upstream.ok || !payload?.accessToken) {
-      const message =
-        extractMessage(payload) ||
-        "Unable to login with the provided credentials";
-      return respondWithError(upstream.status || 500, message);
+      return handleUpstreamError(
+        upstream,
+        payload,
+        "Unable to login with the provided credentials",
+      );
     }
 
-    const response = NextResponse.json(
-      {
-        userId: payload.userId,
-        expiresIn: payload.expiresIn,
-      },
-      { status: 200 },
+    return createAuthSuccessResponse(
+      payload.accessToken,
+      payload.userId,
+      payload.expiresIn,
+      200,
     );
-
-    setAuthCookie(response, payload.accessToken, payload.expiresIn);
-    return response;
   } catch (error) {
     console.error("Login route error:", error);
     return respondWithError(500, "Internal server error");
@@ -64,15 +57,4 @@ function buildBasicAuthHeader(username: string, password: string): string {
     "base64",
   );
   return `Basic ${encoded}`;
-}
-
-function extractMessage(payload?: LoginResponse | null): string | null {
-  if (!payload) return null;
-  return payload.message || payload.reason || payload.error || null;
-}
-
-function respondWithError(status: number, message: string): NextResponse {
-  const response = NextResponse.json({ message }, { status });
-  clearAuthCookie(response);
-  return response;
 }

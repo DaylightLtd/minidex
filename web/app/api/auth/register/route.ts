@@ -1,21 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-import { clearAuthCookie, setAuthCookie } from "@/lib/auth-cookies";
+import type { AuthResponse } from "@/app/api/auth/types";
+import {
+  createAuthSuccessResponse,
+  handleUpstreamError,
+  respondWithError,
+} from "@/app/api/auth/utils";
 import { getApiUrl } from "@/lib/env";
 
 type RegisterRequestBody = {
   username?: unknown;
   password?: unknown;
   confirmPassword?: unknown;
-};
-
-type RegisterResponse = {
-  accessToken?: string;
-  expiresIn?: number;
-  userId?: string;
-  error?: string;
-  message?: string;
-  reason?: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -45,38 +41,24 @@ export async function POST(request: NextRequest) {
       cache: "no-store",
     });
 
-    const payload = await upstream.json().catch<RegisterResponse>(() => ({}));
+    const payload = await upstream.json().catch<AuthResponse>(() => ({}));
 
     if (!upstream.ok || !payload?.accessToken) {
-      const message =
-        extractMessage(payload) ||
-        "Unable to register with the provided credentials";
-      return respondWithError(upstream.status || 500, message);
+      return handleUpstreamError(
+        upstream,
+        payload,
+        "Unable to register with the provided credentials",
+      );
     }
 
-    const response = NextResponse.json(
-      {
-        userId: payload.userId,
-        expiresIn: payload.expiresIn,
-      },
-      { status: upstream.status || 201 },
+    return createAuthSuccessResponse(
+      payload.accessToken,
+      payload.userId,
+      payload.expiresIn,
+      upstream.status || 201,
     );
-
-    setAuthCookie(response, payload.accessToken, payload.expiresIn);
-    return response;
   } catch (error) {
     console.error("Register route error:", error);
     return respondWithError(500, "Internal server error");
   }
-}
-
-function extractMessage(payload?: RegisterResponse | null): string | null {
-  if (!payload) return null;
-  return payload.message || payload.reason || payload.error || null;
-}
-
-function respondWithError(status: number, message: string): NextResponse {
-  const response = NextResponse.json({ message }, { status });
-  clearAuthCookie(response);
-  return response;
 }
