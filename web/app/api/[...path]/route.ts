@@ -68,7 +68,6 @@ async function proxyRequest(
     const url = `${baseUrl}${queryString ? `?${queryString}` : ""}`;
 
     // Get the auth token from HttpOnly cookie
-    // TODO: Implement cookie reading when authentication is set up
     const authToken = request.cookies.get("auth_token")?.value;
 
     // Prepare headers
@@ -114,7 +113,7 @@ async function proxyRequest(
     });
 
     // Forward relevant headers (excluding ones that shouldn't be forwarded)
-    const headersToForward = ["content-type", "content-length"];
+    const headersToForward = ["content-type"];
     response.headers.forEach((value, key) => {
       if (headersToForward.includes(key.toLowerCase())) {
         nextResponse.headers.set(key, value);

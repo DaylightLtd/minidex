@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { enqueueSnackbar } from "notistack";
 import { FormEvent, useEffect, useState } from "react";
 
+import { UserAvatar } from "@/app/(auth)/components/UserAvatar";
 import {
   type CurrentProfile,
   useCurrentProfile,
@@ -130,17 +131,29 @@ export default function ProfileEditPage() {
               {isProfileLoading ? (
                 <Skeleton variant="rectangular" height={56} animation="wave" />
               ) : (
-                <TextField
-                  label={m.avatarUrlLabel}
-                  value={avatarURL}
-                  onChange={handleAvatarUrlChange}
-                  placeholder={m.avatarUrlPlaceholder}
-                  fullWidth
-                  disabled={isFormDisabled}
-                  error={hasFormError}
-                  helperText={avatarUrlError}
-                  InputLabelProps={{ shrink: true, required: false }}
-                />
+                <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+                  <TextField
+                    label={m.avatarUrlLabel}
+                    value={avatarURL}
+                    onChange={handleAvatarUrlChange}
+                    placeholder={m.avatarUrlPlaceholder}
+                    fullWidth
+                    disabled={isFormDisabled}
+                    error={hasFormError}
+                    helperText={avatarUrlError}
+                    InputLabelProps={{ shrink: true, required: false }}
+                  />
+                  {avatarURL.trim() &&
+                    isValidUrl(avatarURL) &&
+                    !hasFormError && (
+                      <UserAvatar
+                        displayName={displayName}
+                        avatarURL={avatarURL.trim()}
+                        width={56}
+                        height={56}
+                      />
+                    )}
+                </Box>
               )}
             </Stack>
           </CardContent>
