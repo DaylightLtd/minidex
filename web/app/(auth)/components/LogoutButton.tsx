@@ -33,7 +33,8 @@ export function LogoutButton({
       await logoutMutation.mutateAsync(undefined);
     } finally {
       setUser(null);
-      await queryClient.resetQueries();
+      await queryClient.cancelQueries();
+      queryClient.clear();
       router.replace(redirectTo);
       router.refresh();
       onLoggedOut?.();

@@ -1,3 +1,3 @@
 export const queryKeys = {
-  currentProfile: ["current-profile"] as const,
+  currentProfile: (userId: string) => ["current-profile", userId] as const,
 };
