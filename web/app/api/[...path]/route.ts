@@ -4,7 +4,7 @@
  * This route handles all API requests and forwards them to the Vapor server
  * with the authentication token from HttpOnly cookies.
  *
- * Usage: /api/* will be proxied to http://server:8080/v1/*
+ * Usage: /api/* will be proxied to http://server:8080/*
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -59,7 +59,7 @@ async function proxyRequest(
   try {
     // Reconstruct the versioned path
     const relativePath = pathSegments.join("/");
-    const path = `/v1${relativePath ? `/${relativePath}` : ""}`;
+    const path = relativePath ? `/${relativePath}` : "";
 
     // Get query parameters from the request
     const searchParams = request.nextUrl.searchParams;
@@ -68,7 +68,6 @@ async function proxyRequest(
     const url = `${baseUrl}${queryString ? `?${queryString}` : ""}`;
 
     // Get the auth token from HttpOnly cookie
-    // TODO: Implement cookie reading when authentication is set up
     const authToken = request.cookies.get("auth_token")?.value;
 
     // Prepare headers
@@ -114,7 +113,7 @@ async function proxyRequest(
     });
 
     // Forward relevant headers (excluding ones that shouldn't be forwarded)
-    const headersToForward = ["content-type", "content-length"];
+    const headersToForward = ["content-type"];
     response.headers.forEach((value, key) => {
       if (headersToForward.includes(key.toLowerCase())) {
         nextResponse.headers.set(key, value);
