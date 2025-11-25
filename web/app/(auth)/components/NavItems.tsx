@@ -115,17 +115,11 @@ type NavItemChildProps = {
   label: string;
   href: string;
   icon: ElementType;
-  exact?: boolean;
 };
 
-export function NavItemChild({
-  label,
-  href,
-  icon: Icon,
-  exact = false,
-}: NavItemChildProps) {
+export function NavItemChild({ label, href, icon: Icon }: NavItemChildProps) {
   const pathname = usePathname();
-  const isActive = exact ? pathname === href : pathname.startsWith(href);
+  const isActive = pathname.startsWith(href);
 
   return (
     <ListItemButton

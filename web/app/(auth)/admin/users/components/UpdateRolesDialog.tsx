@@ -13,22 +13,18 @@ import {
 import { useState } from "react";
 
 import { usersManagementMessages as m } from "@/app/(auth)/admin/users/messages";
-import { type UserRole } from "@/app/context/user-context";
+import { ALL_USER_ROLES, type UserRole } from "@/app/context/user-context";
 
 type UpdateRolesDialogProps = {
   open: boolean;
-  userId: string;
   currentRoles: UserRole[];
   onClose: () => void;
   onSave: (roles: UserRole[]) => void;
   isPending?: boolean;
 };
 
-const ALL_ROLES: UserRole[] = ["admin", "hobbyist", "cataloguer"];
-
 export function UpdateRolesDialog({
   open,
-  userId,
   currentRoles,
   onClose,
   onSave,
@@ -59,7 +55,7 @@ export function UpdateRolesDialog({
       <DialogTitle>{m.updateRolesDialogTitle}</DialogTitle>
       <DialogContent>
         <FormGroup>
-          {ALL_ROLES.map((role) => (
+          {ALL_USER_ROLES.map((role) => (
             <FormControlLabel
               key={role}
               control={

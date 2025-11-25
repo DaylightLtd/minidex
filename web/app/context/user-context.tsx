@@ -11,7 +11,9 @@ import {
 import { api } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-client";
 
-export type UserRole = "admin" | "hobbyist" | "cataloguer";
+export const ALL_USER_ROLES = ["admin", "hobbyist", "cataloguer"] as const;
+
+export type UserRole = (typeof ALL_USER_ROLES)[number];
 
 export type User = {
   userId: string;

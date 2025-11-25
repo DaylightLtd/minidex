@@ -47,7 +47,6 @@ export default function UsersManagementPage() {
     isActive: boolean;
   } | null>(null);
   const [updateRolesDialog, setUpdateRolesDialog] = useState<{
-    open: boolean;
     userId: string;
     currentRoles: UserRole[];
   } | null>(null);
@@ -91,33 +90,6 @@ export default function UsersManagementPage() {
     setMenuAnchor(null);
   };
 
-  const handleUpdateRoles = () => {
-    if (menuAnchor) {
-      const user = users.find((u) => u.id === menuAnchor.userId);
-      if (user) {
-        setUpdateRolesDialog({
-          open: true,
-          userId: menuAnchor.userId,
-          currentRoles: user.roles,
-        });
-      }
-      handleMenuClose();
-    }
-  };
-
-  const handleUpdateRolesDialogClose = () => {
-    setUpdateRolesDialog(null);
-  };
-
-  const handleUpdateRolesSave = (roles: UserRole[]) => {
-    if (updateRolesDialog) {
-      patchMutation.mutate({
-        userId: updateRolesDialog.userId,
-        roles,
-      });
-    }
-  };
-
   const patchMutation = useApiMutation<
     { id: string; roles: UserRole[]; isActive: boolean },
     { userId: string; isActive?: boolean; roles?: UserRole[] }
@@ -150,6 +122,32 @@ export default function UsersManagementPage() {
       handleMenuClose();
     },
   });
+
+  const handleUpdateRoles = () => {
+    if (menuAnchor) {
+      const user = users.find((u) => u.id === menuAnchor.userId);
+      if (user) {
+        setUpdateRolesDialog({
+          userId: menuAnchor.userId,
+          currentRoles: user.roles,
+        });
+      }
+      handleMenuClose();
+    }
+  };
+
+  const handleUpdateRolesDialogClose = () => {
+    setUpdateRolesDialog(null);
+  };
+
+  const handleUpdateRolesSave = (roles: UserRole[]) => {
+    if (updateRolesDialog) {
+      patchMutation.mutate({
+        userId: updateRolesDialog.userId,
+        roles,
+      });
+    }
+  };
 
   const handleActivate = () => {
     if (menuAnchor) {
@@ -324,8 +322,7 @@ export default function UsersManagementPage() {
 
         {updateRolesDialog && (
           <UpdateRolesDialog
-            open={updateRolesDialog.open}
-            userId={updateRolesDialog.userId}
+            open={true}
             currentRoles={updateRolesDialog.currentRoles}
             onClose={handleUpdateRolesDialogClose}
             onSave={handleUpdateRolesSave}
