@@ -53,14 +53,3 @@ public func configure(_ app: Application) async throws {
     // register routes
     try routes(app)
 }
-
-extension Application {
-    struct SlackKey: StorageKey {
-        typealias Value = SlackClient
-    }
-
-    var slack: SlackClient {
-        get { storage[SlackKey.self]! }
-        set { storage[SlackKey.self] = newValue }
-    }
-}

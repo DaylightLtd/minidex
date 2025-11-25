@@ -34,6 +34,7 @@ let package = Package(
             name: "AuthAPI",
             dependencies: [
                 .target(name: "AuthDB"),
+                .target(name: "SlackIntegration"),
                 .target(name: "VaporRedisUtils"),
                 .target(name: "VaporUtils"),
                 .product(name: "Fluent", package: "fluent"),
