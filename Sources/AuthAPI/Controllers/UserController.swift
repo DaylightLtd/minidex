@@ -61,7 +61,7 @@ public struct UserController: RestCrudController {
         root.group(":id") { route in
             route.get(use: self.get)
             route.patch(use: self.update)
-            route.post("revokeAccess", use: self.revokeAccess)
+            route.post("invalidateSessions", use: self.invalidateSessions)
         }
     }
 
@@ -103,7 +103,7 @@ public struct UserController: RestCrudController {
         return updated
     }
 
-    func revokeAccess(req: Request) async throws -> HTTPStatus {
+    func invalidateSessions(req: Request) async throws -> HTTPStatus {
         let userID = try req.parameters.require("id", as: UUID.self)
         try await TokenRevocation.revokeAllActiveTokens(
             userID: userID,
@@ -111,7 +111,7 @@ public struct UserController: RestCrudController {
             redis: req.redisClient,
             logger: req.logger
         )
-        req.logger.debug("Revoked access for userID: \(userID)")
+        req.logger.debug("Revoked all active tokens for userID: \(userID)")
         return .ok
     }
 }

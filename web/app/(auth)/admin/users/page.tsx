@@ -22,15 +22,20 @@ import {
   TableSortLabel,
   Typography,
 } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
+import { enqueueSnackbar } from "notistack";
 import { useState } from "react";
 
 import { useUsers } from "@/app/(auth)/admin/users/hooks/use-users";
 import { usersManagementMessages as m } from "@/app/(auth)/admin/users/messages";
+import { type UserRole } from "@/app/context/user-context";
+import { useApiMutation } from "@/lib/hooks/use-api-mutation";
 
 type SortField = "roles" | "isActive" | null;
 type SortOrder = "asc" | "desc";
 
 export default function UsersManagementPage() {
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [sortField, setSortField] = useState<SortField>(null);
@@ -88,27 +93,54 @@ export default function UsersManagementPage() {
     }
   };
 
+  const patchMutation = useApiMutation<
+    { id: string; roles: UserRole[]; isActive: boolean },
+    { userId: string; isActive: boolean }
+  >({
+    method: "patch",
+    path: (variables) => `/v1/users/${variables.userId}`,
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["users"],
+      });
+      enqueueSnackbar(
+        variables.isActive ? m.activateSuccess : m.deactivateSuccess,
+        { variant: "success" },
+      );
+      handleMenuClose();
+    },
+  });
+
+  const invalidateSessionsMutation = useApiMutation<void, { userId: string }>({
+    method: "post",
+    path: (variables) => `/v1/users/${variables.userId}/invalidateSessions`,
+    onSuccess: async () => {
+      enqueueSnackbar(m.invalidateSessionsSuccess, { variant: "success" });
+      handleMenuClose();
+    },
+  });
+
   const handleActivate = () => {
     if (menuAnchor) {
-      // TODO: Implement activate
-      console.log("Activate user:", menuAnchor.userId);
-      handleMenuClose();
+      patchMutation.mutate({
+        userId: menuAnchor.userId,
+        isActive: true,
+      });
     }
   };
 
   const handleDeactivate = () => {
     if (menuAnchor) {
-      // TODO: Implement deactivate
-      console.log("Deactivate user:", menuAnchor.userId);
-      handleMenuClose();
+      patchMutation.mutate({
+        userId: menuAnchor.userId,
+        isActive: false,
+      });
     }
   };
 
-  const handleRevokeAccess = () => {
+  const handleInvalidateSessions = () => {
     if (menuAnchor) {
-      // TODO: Implement revoke access
-      console.log("Revoke access for user:", menuAnchor.userId);
-      handleMenuClose();
+      invalidateSessionsMutation.mutate({ userId: menuAnchor.userId });
     }
   };
 
@@ -254,7 +286,9 @@ export default function UsersManagementPage() {
           ) : (
             <MenuItem onClick={handleActivate}>{m.activate}</MenuItem>
           )}
-          <MenuItem onClick={handleRevokeAccess}>{m.revokeAccess}</MenuItem>
+          <MenuItem onClick={handleInvalidateSessions}>
+            {m.invalidateSessions}
+          </MenuItem>
         </Menu>
       </Stack>
     </Container>

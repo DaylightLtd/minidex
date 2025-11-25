@@ -11,5 +11,8 @@ export const usersManagementMessages = {
   updateRoles: "Update Roles",
   activate: "Activate",
   deactivate: "Deactivate",
-  revokeAccess: "Invalidate sessions",
+  invalidateSessions: "Invalidate sessions",
+  activateSuccess: "User activated successfully",
+  deactivateSuccess: "User deactivated successfully",
+  invalidateSessionsSuccess: "User sessions invalidated successfully",
 };

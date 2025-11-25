@@ -301,8 +301,8 @@ struct UserControllerTests {
         }
     }
 
-    @Test("revoke access revokes tokens and clears cache")
-    func revokeAccess() async throws {
+    @Test("invalidate sessions revokes tokens and clears cache")
+    func invalidateSessions() async throws {
         try await AuthAPITestApp.withApp { app, redis in
             let (_, adminToken) = try await makeAdmin(app: app)
             let target = try await AuthenticatedTestContext.createUser(
@@ -320,7 +320,7 @@ struct UserControllerTests {
 
             try await app.testing().test(
                 .POST,
-                "v1/users/\(targetID)/revokeAccess",
+                "v1/users/\(targetID)/invalidateSessions",
                 beforeRequest: { req in
                     AuthAPITestHelpers.authorize(&req, token: adminToken.accessToken)
                 },

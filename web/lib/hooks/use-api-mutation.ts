@@ -16,7 +16,7 @@ type UseApiMutationOptions<TData, TVariables> = Omit<
   "mutationFn"
 > & {
   method: "post" | "put" | "patch";
-  path: string;
+  path: string | ((variables: TVariables) => string);
   request?: Omit<ApiRequestOptions<TVariables>, "method" | "body">;
   suppressToast?: boolean;
   genericErrorMessage?: string;
@@ -80,13 +80,14 @@ export function useApiMutation<TData = unknown, TVariables = unknown>(
   return useMutation<TData, Error, TVariables>({
     ...rest,
     mutationFn: (variables: TVariables) => {
+      const resolvedPath = typeof path === "function" ? path(variables) : path;
       switch (method) {
         case "post":
-          return api.post<TData, TVariables>(path, variables, request);
+          return api.post<TData, TVariables>(resolvedPath, variables, request);
         case "put":
-          return api.put<TData, TVariables>(path, variables, request);
+          return api.put<TData, TVariables>(resolvedPath, variables, request);
         case "patch":
-          return api.patch<TData, TVariables>(path, variables, request);
+          return api.patch<TData, TVariables>(resolvedPath, variables, request);
         default:
           throw new Error(`Unsupported HTTP method: ${method}`);
       }
