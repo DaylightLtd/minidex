@@ -7,11 +7,11 @@ func routes(_ app: Application) throws {
         tokenLength: Settings.Auth.tokenLength,
         accessTokenExpiration: Settings.Auth.accessTokenExpiration,
         newUserRoles: .hobbyist,
-        rolesToStrings: \.asStringSet,
+        rolesConverter: .minidex,
     ))
 
     // Admin routes
-    try app.register(collection: UserController())
+    try app.register(collection: UserController(rolesConverter: .minidex))
     try app.register(collection: UserProfileController())
 
     try app.register(collection: MeController())

@@ -21,16 +21,28 @@ enum AuthAPITestApp {
                     tokenLength: defaultTokenLength,
                     accessTokenExpiration: defaultExpiration,
                     newUserRoles: newUserRoles,
-                    rolesToStrings: { roles in
-                        var result = Set<String>()
-                        if roles.contains(.admin) { result.insert("admin") }
-                        if roles.contains(.tester) { result.insert("tester") }
-                        return result
-                    }
+                    rolesConverter: .test,
                 )
             )
-            try context.app.register(collection: UserController())
+            try context.app.register(collection: UserController(rolesConverter: .test))
             try await runTest(context.app, context.redis)
         }
     }
+}
+
+extension RolesConverter {
+    static let test = RolesConverter(
+        toStrings: { roles in
+            var result = Set<String>()
+            if roles.contains(.admin) { result.insert("admin") }
+            if roles.contains(.tester) { result.insert("tester") }
+            return result
+        },
+        toRoles: { strings in
+            var result = Roles()
+            if strings.contains("admin") { result.insert(.admin) }
+            if strings.contains("tester") { result.insert(.tester) }
+            return result
+        }
+    )
 }

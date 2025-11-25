@@ -11,29 +11,38 @@ public struct UserController: RestCrudController {
 
     public struct DTO: Content {
         public var id: UUID
-        public var roles: Roles
+        public var roles: Set<String>
         public var isActive: Bool
     }
 
     public struct PostDTO: Content {
-        public var roles: Roles
+        public var roles: Set<String>
         public var isActive: Bool
     }
 
     public struct PatchDTO: Content {
-        public var roles: Roles?
+        public var roles: Set<String>?
         public var isActive: Bool?
     }
 
-    public init() {}
+    let rolesConverter: RolesConverter
+
+    public init(rolesConverter: RolesConverter) {
+        self.rolesConverter = rolesConverter
+    }
 
     public func toDTO(_ dbModel: DBUser) throws -> DTO {
         try .init(
             id: dbModel.requireID(),
-            roles: .init(rawValue: dbModel.roles),
+            roles: rolesConverter.toStrings(.init(rawValue: dbModel.roles)),
             isActive: dbModel.isActive,
         )
     }
+
+    public var sortColumnMapping = [
+        "roles": "roles",
+        "isActive": "is_active",
+    ]
 
     public func boot(routes: any RoutesBuilder) throws {
         let root = routes
@@ -44,12 +53,15 @@ public struct UserController: RestCrudController {
 
         root.get(use: self.index)
         root.post(use: self.create { dto, _ in
-            .init(roles: dto.roles.rawValue, isActive: dto.isActive)
+            .init(
+                roles: rolesConverter.toRoles(dto.roles).rawValue,
+                isActive: dto.isActive
+            )
         })
         root.group(":id") { route in
             route.get(use: self.get)
             route.patch(use: self.update)
-            route.post("revokeAccess", use: self.revokeAccess)
+            route.post("invalidateSessions", use: self.invalidateSessions)
         }
     }
 
@@ -61,7 +73,7 @@ public struct UserController: RestCrudController {
         let patch = try req.content.decode(PatchDTO.self)
 
         var userAccessChanged = false
-        if let value = patch.roles {
+        if let value = patch.roles.map(rolesConverter.toRoles) {
             userAccessChanged = dbModel.roles != value.rawValue
             dbModel.roles = value.rawValue
         }
@@ -91,7 +103,7 @@ public struct UserController: RestCrudController {
         return updated
     }
 
-    func revokeAccess(req: Request) async throws -> HTTPStatus {
+    func invalidateSessions(req: Request) async throws -> HTTPStatus {
         let userID = try req.parameters.require("id", as: UUID.self)
         try await TokenRevocation.revokeAllActiveTokens(
             userID: userID,
@@ -99,7 +111,7 @@ public struct UserController: RestCrudController {
             redis: req.redisClient,
             logger: req.logger
         )
-        req.logger.debug("Revoked access for userID: \(userID)")
+        req.logger.debug("Revoked all active tokens for userID: \(userID)")
         return .ok
     }
 }

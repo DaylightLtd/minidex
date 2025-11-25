@@ -66,7 +66,7 @@ public struct AuthenticatedTestContext {
             tokenLength: tokenLength,
             accessTokenExpiration: accessTokenExpiration,
             newUserRoles: roles,
-            rolesToStrings: { _ in [] },
+            rolesConverter: .empty,
         ))
 
         let user = try await createUser(

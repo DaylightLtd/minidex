@@ -1,7 +1,9 @@
 "use client";
 
 import HomeOutlined from "@mui/icons-material/HomeOutlined";
+import PeopleOutlined from "@mui/icons-material/PeopleOutlined";
 import PersonOutlined from "@mui/icons-material/PersonOutlined";
+import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
 import {
   Box,
   Divider,
@@ -16,9 +18,15 @@ import Link from "next/link";
 import { useState } from "react";
 
 import LogoutButton from "@/app/(auth)/components/LogoutButton";
-import { MainNavItem } from "@/app/(auth)/components/MainNavItem";
+import {
+  ExpandableNavItem,
+  NavItem,
+  NavItemChild,
+} from "@/app/(auth)/components/NavItems";
 import { UserAvatar } from "@/app/(auth)/components/UserAvatar";
 import { useCurrentProfile } from "@/app/(auth)/hooks/use-current-profile";
+import { layoutMessages as m } from "@/app/(auth)/messages";
+import { useCurrentUser } from "@/app/context/user-context";
 
 export default function AuthenticatedLayout({
   children,
@@ -26,10 +34,12 @@ export default function AuthenticatedLayout({
   children: React.ReactNode;
 }) {
   const { data: profile, isLoading: isProfileLoading } = useCurrentProfile();
+  const { user } = useCurrentUser();
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const isMenuOpen = Boolean(menuAnchor);
 
-  const displayName = profile?.displayName ?? "User";
+  const displayName = profile?.displayName ?? m.user;
+  const isAdmin = user?.roles.includes("admin") ?? false;
 
   function handleAvatarClick(event: React.MouseEvent<HTMLElement>) {
     setMenuAnchor(event.currentTarget);
@@ -62,19 +72,32 @@ export default function AuthenticatedLayout({
       >
         <Box>
           <Typography variant="h5" fontWeight={700} color="primary.main">
-            MiniDex
+            {m.appName}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Admin Console
+            {m.adminConsole}
           </Typography>
         </Box>
 
-        <List sx={{ flexGrow: 1, p: 0 }}>
-          <MainNavItem label="Home" href="/home" icon={HomeOutlined} exact />
+        <List sx={{ flexGrow: 1, p: 0.5 }}>
+          <NavItem label={m.home} href="/home" icon={HomeOutlined} exact />
+          {isAdmin && (
+            <ExpandableNavItem
+              label={m.admin}
+              icon={SettingsOutlined}
+              basePath="/admin"
+            >
+              <NavItemChild
+                label={m.users}
+                href="/admin/users"
+                icon={PeopleOutlined}
+              />
+            </ExpandableNavItem>
+          )}
         </List>
 
         <Typography variant="caption" color="text.secondary">
-          © {new Date().getFullYear()} MiniDex
+          © {new Date().getFullYear()} {m.appName}
         </Typography>
       </Box>
 
@@ -119,7 +142,7 @@ export default function AuthenticatedLayout({
               <ListItemIcon sx={{ minWidth: 32 }}>
                 <HomeOutlined fontSize="small" />
               </ListItemIcon>
-              Home
+              {m.home}
             </MenuItem>
             <MenuItem
               component={Link}
@@ -130,7 +153,7 @@ export default function AuthenticatedLayout({
               <ListItemIcon sx={{ minWidth: 32 }}>
                 <PersonOutlined fontSize="small" />
               </ListItemIcon>
-              Profile
+              {m.profile}
             </MenuItem>
             <MenuItem
               disableRipple
@@ -159,7 +182,7 @@ export default function AuthenticatedLayout({
                 color="error"
                 onLoggedOut={handleMenuClose}
               >
-                Logout
+                {m.logout}
               </LogoutButton>
             </MenuItem>
           </Menu>
