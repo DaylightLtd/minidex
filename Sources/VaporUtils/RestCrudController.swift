@@ -43,9 +43,22 @@ public protocol RestCrudController: RouteCollection, Sendable {
     associatedtype PostDTO: Content
     associatedtype PatchDTO: Content
 
+    /// Called by `get`, `update` and `delete` to find the model to operate on.
+    /// Default implementation looks for `id` path parameter and looks up by
+    /// primary key in database.
     func findOne(req: Request) async throws -> DBModel?
+
+    /// Mapping from `DTO` to `DBModel`, no default implementation.
     func toDTO(_ dbModel: DBModel) throws -> DTO
+
+    /// Called by `index` when search parameter is provided.
+    /// Default implementation does nothing, implement to support filtering.
     func indexFilter(_ q: String, query: QueryBuilder<DBModel>) -> QueryBuilder<DBModel>?
+
+    /// Called by `index` when sorting parameter is provided.
+    /// Sorting is supported only by fields in the map.
+    /// Default implementation returns an empty map.
+    var sortColumnMapping: [String: String] { get }
 }
 
 extension RestCrudController {
@@ -64,6 +77,10 @@ extension RestCrudController {
         nil
     }
 
+    public var sortColumnMapping: [String: String] {
+        [:]
+    }
+
     public func index(req: Request) async throws -> PagedResponse<DTO> {
         let params = try req.query.decode(ListQueryParams.self)
 
@@ -78,9 +95,9 @@ extension RestCrudController {
         query = query.offset(page * limit).limit(limit)
 
         // Sort
-        if let sort = params.sort {
+        if let sort = params.sort, let column = sortColumnMapping[sort] {
             let order = params.order ?? .ascending
-            query = query.sort(.string(sort), order.dbValue)
+            query = query.sort(.string(column), order.dbValue)
         }
 
         // Search

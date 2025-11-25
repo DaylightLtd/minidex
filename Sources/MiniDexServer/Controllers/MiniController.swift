@@ -35,6 +35,10 @@ struct MiniController: RestCrudController {
         query.filter(\.$name ~~ q) // contains
     }
 
+    var sortColumnMapping = [
+        "name": "name",
+    ]
+
     func boot(routes: any RoutesBuilder) throws {
         let root = routes
             .grouped("v1", "minis")
