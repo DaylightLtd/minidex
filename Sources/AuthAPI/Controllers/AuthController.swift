@@ -32,18 +32,18 @@ public struct AuthController: RouteCollection, Sendable {
     let tokenLength: Int
     let accessTokenExpiration: TimeInterval
     let newUserRoles: Roles
-    let rolesToStrings: @Sendable (Roles) -> Set<String>
+    let rolesConverter: RolesConverter
 
     public init(
         tokenLength: Int,
         accessTokenExpiration: TimeInterval,
         newUserRoles: Roles,
-        rolesToStrings: @escaping @Sendable (Roles) -> Set<String>,
+        rolesConverter: RolesConverter,
     ) {
         self.tokenLength = tokenLength
         self.accessTokenExpiration = accessTokenExpiration
         self.newUserRoles = newUserRoles
-        self.rolesToStrings = rolesToStrings
+        self.rolesConverter = rolesConverter
     }
 
     public func boot(routes: any RoutesBuilder) throws {
@@ -92,7 +92,7 @@ public struct AuthController: RouteCollection, Sendable {
             accessToken: token.rawEncoded,
             expiresIn: Int(accessTokenExpiration),
             userId: user.id,
-            roles: rolesToStrings(user.roles),
+            roles: rolesConverter.toStrings(user.roles),
         )
     }
 
@@ -114,7 +114,7 @@ public struct AuthController: RouteCollection, Sendable {
         let user = try req.auth.require(AuthUser.self)
         return .init(
             userId: user.id,
-            roles: rolesToStrings(user.roles),
+            roles: rolesConverter.toStrings(user.roles),
         )
     }
 
@@ -179,7 +179,7 @@ public struct AuthController: RouteCollection, Sendable {
             accessToken: token.rawEncoded,
             expiresIn: Int(userToken.expiresAt.timeIntervalSinceNow),
             userId: userID,
-            roles: rolesToStrings(newUserRoles),
+            roles: rolesConverter.toStrings(newUserRoles),
         )
         try response.content.encode(content)
         return response

@@ -14,3 +14,22 @@ extension Roles {
         return result
     }
 }
+
+extension RolesConverter {
+    static let minidex = RolesConverter(
+        toStrings: { roles in
+            var result = Set<String>()
+            if roles.contains(.admin) { result.insert("admin") }
+            if roles.contains(.hobbyist) { result.insert("hobbyist") }
+            if roles.contains(.cataloguer) { result.insert("cataloguer") }
+            return result
+        },
+        toRoles: { strings in
+            var result = Roles()
+            if strings.contains("admin") { result.insert(.admin) }
+            if strings.contains("hobbyist") { result.insert(.hobbyist) }
+            if strings.contains("cataloguer") { result.insert(.cataloguer) }
+            return result
+        }
+    )
+}
