@@ -4,6 +4,7 @@ import FluentPostgresDriver
 import MiniDexDB
 import NIOSSL
 import Redis
+import SlackIntegration
 import Vapor
 
 // configures your application
@@ -39,6 +40,11 @@ public func configure(_ app: Application) async throws {
         hostname: redisHostname,
         port: redisPort,
     )
+
+    if let token = Settings.Slack.botToken {
+        app.slack = .vapor(client: app.client, token: token)
+        app.logger.debug("Slack integration is enabled")
+    }
 
     app.migrations.add(AuthDB.migrations)
     app.migrations.add(Migration_CreateAdminUser(logger: app.logger))

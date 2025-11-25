@@ -1,6 +1,7 @@
 import AuthDB
 import Fluent
 import Redis
+import SlackIntegration
 import Vapor
 import VaporRedisUtils
 import VaporUtils
@@ -182,6 +183,17 @@ public struct AuthController: RouteCollection, Sendable {
             roles: rolesConverter.toStrings(newUserRoles),
         )
         try response.content.encode(content)
+
+        if let slack = req.application.slack {
+            Task.detached { [slack, logger = req.logger, userID] in
+                do {
+                    try await slack.send("New user registration - `\(userID)`", "#minidex-signups")
+                } catch {
+                    logger.error("Slack error: \(error)")
+                }
+            }
+        }
+
         return response
     }
 
