@@ -244,3 +244,15 @@ private final class InMemoryRedisClient: RedisClient {
         eventLoop.makeFailedFuture(InMemoryRedisError.unsupportedCommand("PUNSUBSCRIBE"))
     }
 }
+
+#if canImport(Testing)
+import Testing
+extension InMemoryRedisDriver {
+    public func assertCleared(key: RedisKey) {
+        let snapshot = self.snapshot()
+        #expect(snapshot.entries[key] == nil)
+        let keyDeleted = snapshot.deleteCalls.contains { $0.contains(key) }
+        #expect(keyDeleted)
+    }
+}
+#endif

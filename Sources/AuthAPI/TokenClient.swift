@@ -11,6 +11,14 @@ public struct TokenClient: Sendable {
 
     /// Revokes all non-revoked tokens for a user and invalidates their cache entries
     public var revokeAllActiveTokens: @Sendable (UUID, (any Database)?) async throws -> Void
+
+    static func userCacheKey(accessToken: String) -> RedisKey {
+        "token:\(accessToken)"
+    }
+
+    static func tokenCacheKey(hashedAccessToken: String) -> RedisKey {
+        "token_hash:\(hashedAccessToken)"
+    }
 }
 
 extension TokenClient {
