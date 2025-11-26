@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import AuthAPI
 import AuthDB
 import Fluent
@@ -146,3 +147,4 @@ public struct AuthenticatedTestContext {
         return loginResponse
     }
 }
+#endif

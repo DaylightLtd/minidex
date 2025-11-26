@@ -49,7 +49,7 @@ struct TokenAuthenticatorTests {
 
             let snapshot = redis.snapshot()
             let userKey = RedisKey("token:\(encoded)")
-            guard let hash = TokenAuthenticator.hashAccessToken(encoded) else {
+            guard let hash = req.tokenClient.hashToken(encoded) else {
                 Issue.record("Failed to hash token")
                 return
             }

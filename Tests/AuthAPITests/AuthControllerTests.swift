@@ -138,7 +138,7 @@ struct AuthControllerTests {
                 .POST,
                 "v1/auth/logout",
                 beforeRequest: { req in
-                    AuthAPITestHelpers.authorize(&req, token: login.accessToken)
+                    req.headers.bearerAuthorization = .init(token: login.accessToken)
                 },
                 afterResponse: { res async in
                     #expect(res.status == .ok)
@@ -151,7 +151,7 @@ struct AuthControllerTests {
             #expect(tokens.count == 1)
             #expect(tokens.first?.isRevoked == true)
 
-            try AuthAPITestHelpers.assertCacheCleared(for: login, redis: redis)
+            try redis.assertAuthCacheCleared(accessToken: login.accessToken)
         }
     }
 
@@ -175,7 +175,7 @@ struct AuthControllerTests {
                 .POST,
                 "v1/auth/logout",
                 beforeRequest: { req in
-                    AuthAPITestHelpers.authorize(&req, token: login.accessToken)
+                    req.headers.bearerAuthorization = .init(token: login.accessToken)
                 },
                 afterResponse: { res async in
                     #expect(res.status == .unauthorized)
@@ -202,7 +202,7 @@ struct AuthControllerTests {
                 .POST,
                 "v1/auth/logout",
                 beforeRequest: { req in
-                    AuthAPITestHelpers.authorize(&req, token: login.accessToken)
+                    req.headers.bearerAuthorization = .init(token: login.accessToken)
                 },
                 afterResponse: { res async in
                     #expect(res.status == .ok)
@@ -233,7 +233,7 @@ struct AuthControllerTests {
                 .GET,
                 "v1/auth/me",
                 beforeRequest: { req in
-                    AuthAPITestHelpers.authorize(&req, token: login.accessToken)
+                    req.headers.bearerAuthorization = .init(token: login.accessToken)
                 },
                 afterResponse: { res async throws in
                     #expect(res.status == .ok)

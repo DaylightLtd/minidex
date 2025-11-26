@@ -1,6 +1,5 @@
 import AuthDB
 import Fluent
-import Logging
 import Redis
 import Vapor
 import VaporRedisUtils
