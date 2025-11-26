@@ -4,8 +4,13 @@ import Redis
 import Vapor
 import VaporRedisUtils
 
-/// Handles token revocation with cache invalidation
 public struct TokenClient: Sendable {
+    /// Checks if a token is valid (not revoked and not expired)
+    public var isTokenValid: @Sendable (DBUserToken) -> Bool
+
+    /// Hashes a token string into a storable form
+    public var hashToken: @Sendable (String) -> Data?
+
     /// Revokes a token in the database and invalidates its cache entry
     public var revoke: @Sendable (DBUserToken, (any Database)?) async throws -> Void
 
@@ -34,6 +39,13 @@ extension TokenClient {
 extension TokenClient {
     static func vapor(req: Request) -> TokenClient {
         .init(
+            isTokenValid: { !$0.isRevoked && $0.expiresAt.timeIntervalSinceNow > 0 },
+            hashToken: { token in
+                token
+                    .base64URLDecodedData()
+                    .map(SHA256.hash(data:))
+                    .map(Data.init(_:))
+            },
             revoke: { token, db in
                 token.isRevoked = true
                 try await token.save(on: db ?? req.db)
