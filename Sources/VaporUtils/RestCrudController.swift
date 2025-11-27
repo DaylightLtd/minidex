@@ -48,6 +48,11 @@ public protocol RestCrudController: RouteCollection, Sendable {
     /// primary key in database.
     func findOne(req: Request) async throws -> DBModel?
 
+    /// Called by `index` to build the base query for fetching a list of
+    /// models, before applying any filtering, sorting or pagination.
+    /// Default implementation returns the default query for `DBModel`.
+    func findMany(req: Request) -> QueryBuilder<DBModel>
+
     /// Mapping from `DTO` to `DBModel`, no default implementation.
     func toDTO(_ dbModel: DBModel) throws -> DTO
 
@@ -73,6 +78,10 @@ extension RestCrudController {
         return model
     }
 
+    public func findMany(req: Request) -> QueryBuilder<DBModel> {
+        DBModel.query(on: req.db)
+    }
+
     public func indexFilter(_ q: String, query: QueryBuilder<DBModel>) -> QueryBuilder<DBModel>? {
         nil
     }
@@ -84,7 +93,7 @@ extension RestCrudController {
     public func index(req: Request) async throws -> PagedResponse<DTO> {
         let params = try req.query.decode(ListQueryParams.self)
 
-        var query = DBModel.query(on: req.db)
+        var query = findMany(req: req)
 
         // Pagination
         let page = params.page ?? 0
