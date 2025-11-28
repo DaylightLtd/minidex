@@ -5,9 +5,12 @@ import { useApiQuery } from "@/lib/hooks/use-api-query";
 import { queryKeys } from "@/lib/query-keys";
 
 export type User = {
-  id: string;
+  userID: string;
   roles: UserRole[];
   isActive: boolean;
+  profileID?: string;
+  displayName?: string;
+  avatarURL?: string;
 };
 
 export type PagedUsersResponse = {
@@ -43,7 +46,7 @@ export function useUsers(options?: UseUsersOptions) {
 
   return useApiQuery<PagedUsersResponse>({
     queryKey: queryKeys.users(page, limit, sort, order),
-    path: "/v1/users",
+    path: "/v1/admin/users",
     request: { params },
   });
 }

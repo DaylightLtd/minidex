@@ -95,7 +95,7 @@ export default function UsersManagementPage() {
     { userId: string; isActive?: boolean; roles?: UserRole[] }
   >({
     method: "patch",
-    path: (variables) => `/v1/users/${variables.userId}`,
+    path: (variables) => `/v1/admin/users/${variables.userId}`,
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({
         queryKey: ["users"],
@@ -116,7 +116,7 @@ export default function UsersManagementPage() {
 
   const invalidateSessionsMutation = useApiMutation<void, { userId: string }>({
     method: "post",
-    path: (variables) => `/v1/users/${variables.userId}/invalidateSessions`,
+    path: (variables) => `/v1/admin/users/${variables.userId}/invalidateSessions`,
     onSuccess: async () => {
       enqueueSnackbar(m.invalidateSessionsSuccess, { variant: "success" });
       handleMenuClose();
@@ -125,7 +125,7 @@ export default function UsersManagementPage() {
 
   const handleUpdateRoles = () => {
     if (menuAnchor) {
-      const user = users.find((u) => u.id === menuAnchor.userId);
+      const user = users.find((u) => u.userID === menuAnchor.userId);
       if (user) {
         setUpdateRolesDialog({
           userId: menuAnchor.userId,
@@ -255,10 +255,10 @@ export default function UsersManagementPage() {
                     </TableRow>
                   ) : (
                     users.map((user) => (
-                      <TableRow key={user.id} hover>
+                      <TableRow key={user.userID} hover>
                         <TableCell>
                           <Typography variant="body2" fontFamily="monospace">
-                            {user.id}
+                            {user.userID}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -277,7 +277,7 @@ export default function UsersManagementPage() {
                           <IconButton
                             size="small"
                             onClick={(e) =>
-                              handleMenuOpen(e, user.id, user.isActive)
+                              handleMenuOpen(e, user.userID, user.isActive)
                             }
                           >
                             <MoreVert fontSize="small" />
