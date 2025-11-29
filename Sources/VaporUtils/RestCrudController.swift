@@ -60,10 +60,13 @@ public protocol RestCrudController: RouteCollection, Sendable {
     /// Default implementation does nothing, implement to support filtering.
     func indexFilter(_ q: String, query: QueryBuilder<DBModel>) -> QueryBuilder<DBModel>?
 
-    /// Called by `index` when sorting parameter is provided.
-    /// Sorting is supported only by fields in the map.
-    /// Default implementation returns an empty map.
-    var sortColumnMapping: [String: String] { get }
+    /// Called by `index` when sort parameter is provided.
+    /// Default implementation does nothing, implement to support sorting.
+    func indexSort(
+        _ sort: String,
+        _ order: DatabaseQuery.Sort.Direction,
+        query: QueryBuilder<DBModel>
+    ) -> QueryBuilder<DBModel>?
 }
 
 extension RestCrudController {
@@ -86,8 +89,12 @@ extension RestCrudController {
         nil
     }
 
-    public var sortColumnMapping: [String: String] {
-        [:]
+    public func indexSort(
+        _ sort: String,
+        _ order: DatabaseQuery.Sort.Direction,
+        query: QueryBuilder<DBModel>
+    ) -> QueryBuilder<DBModel>? {
+        nil
     }
 
     public func index(req: Request) async throws -> PagedResponse<DTO> {
@@ -101,9 +108,9 @@ extension RestCrudController {
         }
 
         // Sort
-        if let sort = params.sort, let column = sortColumnMapping[sort] {
-            let order = params.order ?? .ascending
-            query = query.sort(.string(column), order.dbValue)
+        let sortOrder = params.order ?? .ascending
+        if let sortedQuery = params.sort.flatMap({ indexSort($0.lowercased(), sortOrder.dbValue, query: query) }) {
+            query = sortedQuery
         }
 
         // Pagination
@@ -120,7 +127,7 @@ extension RestCrudController {
             data: data,
             page: page,
             limit: limit,
-            sort: params.sort,
+            sort: params.sort?.lowercased(),
             order: params.sort != nil ? (params.order ?? .ascending) : nil,
             query: params.q,
         )

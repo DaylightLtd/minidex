@@ -48,6 +48,23 @@ struct UserAdminController: RestCrudController {
         query.caseInsensitiveContains(DBUserProfile.self, \.$displayName, q)
     }
 
+    func indexSort(
+        _ sort: String,
+        _ order: DatabaseQuery.Sort.Direction,
+        query: QueryBuilder<DBUser>
+    ) -> QueryBuilder<DBUser>? {
+        switch sort {
+        case "roles":
+            query.sort(\.$roles, order)
+        case "isactive":
+            query.sort(\.$isActive, order)
+        case "displayname":
+            query.sort(DBUserProfile.self, \.$displayName, order)
+        default:
+            nil
+        }
+    }
+
     var sortColumnMapping: [String : String] {
         [
             "roles": "roles",
