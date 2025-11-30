@@ -12,7 +12,10 @@ import Testing
 
 @Suite("TokenAuthenticator", .serialized)
 struct TokenAuthenticatorTests {
-    private let authenticator = TokenAuthenticator()
+    private let authenticator = TokenAuthenticator(
+        cacheExpiration: 30,
+        checksumSecret: "test-secret"
+    )
 
     @Test("authenticates cached user with valid token")
     func cacheHitReturnsUser() async throws {
@@ -23,15 +26,16 @@ struct TokenAuthenticatorTests {
             let (encoded, raw) = makeTokenValue("cached-token")
             let token = try await storeToken(for: dbUser, rawToken: raw, expiresIn: 3600, isRevoked: false, on: app.db)
 
-            let cached = AuthUser(id: try dbUser.requireID(), roles: [.admin], isActive: true, tokenID: try token.requireID())
+            let user = AuthUser(id: try dbUser.requireID(), roles: [.admin], isActive: true, tokenID: try token.requireID())
+            let cached = CachedAuthUser(user: user, checksumSecret: "test-secret")
             let client = context.redis.makeClient(on: app.eventLoopGroup.next())
-            try await client.setex("token:\(encoded)", toJSON: cached, expirationInSeconds: 60)
+            try await client.setex("token:\(encoded)", toJSON: cached, expirationInSeconds: 30)
 
             let req = makeRequest(app: app, bearerToken: encoded)
             try await authenticator.authenticate(bearer: .init(token: encoded), for: req)
 
             let authed = try req.auth.require(AuthUser.self)
-            #expect(authed.id == cached.id)
+            #expect(authed.id == cached.user.id)
         }
     }
 
@@ -51,7 +55,7 @@ struct TokenAuthenticatorTests {
             let authed = try req.auth.require(AuthUser.self)
             #expect(authed.id == expectedID)
 
-            try context.redis.assertAuthCacheSet(accessToken: encoded, userID: expectedID, ttl: 3600)
+            try context.redis.assertAuthCacheSet(accessToken: encoded, userID: expectedID, ttl: 30)
         }
     }
 
@@ -96,8 +100,8 @@ struct TokenAuthenticatorTests {
         }
     }
 
-    @Test("cache hit with revoked token is rejected")
-    func cacheHitWithRevokedTokenRejected() async throws {
+    @Test("cache hit with revoked token works until cache expires")
+    func cacheHitWithRevokedTokenWorks() async throws {
         try await TestContext.run(migrations: AuthDB.migrations) { context in
             let app = context.app
 
@@ -107,58 +111,37 @@ struct TokenAuthenticatorTests {
 
             let req1 = makeRequest(app: app, bearerToken: encoded)
             try await authenticator.authenticate(bearer: .init(token: encoded), for: req1)
-            #expect(req1.auth.has(AuthUser.self) == true)
+            #expect(req1.auth.has(AuthUser.self))
 
-            try context.redis.assertAdded(key: "token:\(encoded)", as: AuthUser.self, ttl: 3600)
+            try context.redis.assertAdded(key: "token:\(encoded)", as: CachedAuthUser.self, ttl: 30)
 
             token.isRevoked = true
             try await token.save(on: app.db)
 
             let req2 = makeRequest(app: app, bearerToken: encoded)
             try await authenticator.authenticate(bearer: .init(token: encoded), for: req2)
-            #expect(req2.auth.has(AuthUser.self) == false)
+            // Still authenticated with short-lived token on failed cache clear
+            #expect(req2.auth.has(AuthUser.self))
         }
     }
 
-    @Test("cache hit with expired token is rejected")
-    func cacheHitWithExpiredTokenRejected() async throws {
-        try await TestContext.run(migrations: AuthDB.migrations) { context in
-            let app = context.app
-
-            let dbUser = try await AuthenticatedTestContext.createUser(on: app.db, username: "iris", roles: .admin)
-            let (encoded, raw) = makeTokenValue("cached-but-expired")
-            let token = try await storeToken(for: dbUser, rawToken: raw, expiresIn: 3600, isRevoked: false, on: app.db)
-
-            let req1 = makeRequest(app: app, bearerToken: encoded)
-            try await authenticator.authenticate(bearer: .init(token: encoded), for: req1)
-            #expect(req1.auth.has(AuthUser.self) == true)
-
-            try context.redis.assertAdded(key: "token:\(encoded)", as: AuthUser.self, ttl: 3600)
-
-            token.expiresAt = Date().addingTimeInterval(-10)
-            try await token.save(on: app.db)
-
-            let req2 = makeRequest(app: app, bearerToken: encoded)
-            try await authenticator.authenticate(bearer: .init(token: encoded), for: req2)
-            #expect(req2.auth.has(AuthUser.self) == false)
-        }
-    }
-
-    @Test("cache hit with missing token is rejected")
-    func cacheHitWithMissingTokenRejected() async throws {
+    @Test("cache hit with missing token works until cache expires")
+    func cacheHitWithMissingTokenWorks() async throws {
         try await TestContext.run(migrations: AuthDB.migrations) { context in
             let app = context.app
 
             let tokenID = UUID()
-            let cached = AuthUser(id: UUID(), roles: [.admin], isActive: true, tokenID: tokenID)
+            let user = AuthUser(id: UUID(), roles: [.admin], isActive: true, tokenID: tokenID)
+            let cached = CachedAuthUser(user: user, checksumSecret: "test-secret")
 
             let accessToken = "cached-but-missing"
             let client = context.redis.makeClient(on: app.eventLoopGroup.next())
-            try await client.setex("token:\(accessToken)", toJSON: cached, expirationInSeconds: 60)
+            try await client.setex("token:\(accessToken)", toJSON: cached, expirationInSeconds: 30)
 
             let req = makeRequest(app: app, bearerToken: accessToken)
             try await authenticator.authenticate(bearer: .init(token: accessToken), for: req)
-            #expect(req.auth.has(AuthUser.self) == false)
+            // Still authenticated with short-lived token on failed cache clear
+            #expect(req.auth.has(AuthUser.self))
         }
     }
 }

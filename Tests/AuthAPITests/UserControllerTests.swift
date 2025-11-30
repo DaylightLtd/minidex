@@ -13,14 +13,25 @@ struct UserControllerTests {
     typealias DTO = UserController.DTO
     typealias PatchDTO = UserController.PatchDTO
 
+    static let cacheExpiration: TimeInterval = 30
+
+    static func registerController(app: Application) throws {
+        try app.register(collection: UserController(
+            cacheExpiration: cacheExpiration,
+            checksumSecret: "test-secret",
+            rolesConverter: .test
+        ))
+    }
+
     @Test("patching nothing does not revoke tokens")
     func patchingNothingDoesNotRevokeTokens() async throws {
         try await AuthenticatedTestContext.run(
+            cacheExpiration: Self.cacheExpiration,
             username: "may",
             roles: .admin,
         ) { context in
             let app = context.app
-            try app.register(collection: UserController(rolesConverter: .test))
+            try Self.registerController(app: app)
 
             try await app.testing().test(
                 .PATCH,
@@ -42,7 +53,7 @@ struct UserControllerTests {
             try context.redis.assertAuthCacheSet(
                 accessToken: context.token,
                 userID: context.userID,
-                ttl: context.expiresIn,
+                ttl: Int(Self.cacheExpiration),
             )
         }
     }
@@ -54,7 +65,7 @@ struct UserControllerTests {
             roles: .admin,
         ) { context in
             let app = context.app
-            try app.register(collection: UserController(rolesConverter: .test))
+            try Self.registerController(app: app)
 
             try await app.testing().test(
                 .PATCH,
@@ -86,7 +97,7 @@ struct UserControllerTests {
             roles: .admin,
         ) { context in
             let app = context.app
-            try app.register(collection: UserController(rolesConverter: .test))
+            try Self.registerController(app: app)
 
             try await app.testing().test(
                 .PATCH,
@@ -114,11 +125,12 @@ struct UserControllerTests {
     @Test("patch roles to same value does not revoke tokens")
     func patchRolesToSameValueDoesNotRevokeTokens() async throws {
         try await AuthenticatedTestContext.run(
+            cacheExpiration: Self.cacheExpiration,
             username: "brock",
             roles: .admin,
         ) { context in
             let app = context.app
-            try app.register(collection: UserController(rolesConverter: .test))
+            try Self.registerController(app: app)
 
             try await app.testing().test(
                 .PATCH,
@@ -140,7 +152,7 @@ struct UserControllerTests {
             try context.redis.assertAuthCacheSet(
                 accessToken: context.token,
                 userID: context.userID,
-                ttl: context.expiresIn,
+                ttl: Int(Self.cacheExpiration),
             )
         }
     }
@@ -148,11 +160,12 @@ struct UserControllerTests {
     @Test("patch isActive to same value does not revoke tokens")
     func patchIsActiveToSameValueDoesNotRevokeTokens() async throws {
         try await AuthenticatedTestContext.run(
+            cacheExpiration: Self.cacheExpiration,
             username: "misty",
             roles: .admin,
         ) { context in
             let app = context.app
-            try app.register(collection: UserController(rolesConverter: .test))
+            try Self.registerController(app: app)
 
             try await app.testing().test(
                 .PATCH,
@@ -174,7 +187,7 @@ struct UserControllerTests {
             try context.redis.assertAuthCacheSet(
                 accessToken: context.token,
                 userID: context.userID,
-                ttl: context.expiresIn,
+                ttl: Int(Self.cacheExpiration),
             )
         }
     }
@@ -187,7 +200,7 @@ struct UserControllerTests {
             roles: .admin,
         ) { context in
             let app = context.app
-            try app.register(collection: UserController(rolesConverter: .test))
+            try Self.registerController(app: app)
 
             try await app.testing().test(
                 .POST,
@@ -238,7 +251,7 @@ struct UserControllerTests {
             roles: .admin,
         ) { context in
             let app = context.app
-            try app.register(collection: UserController(rolesConverter: .test))
+            try Self.registerController(app: app)
 
             try await app.testing().test(
                 .PATCH,
@@ -261,7 +274,7 @@ struct UserControllerTests {
             roles: .admin,
         ) { context in
             let app = context.app
-            try app.register(collection: UserController(rolesConverter: .test))
+            try Self.registerController(app: app)
 
             try await app.testing().test(
                 .POST,

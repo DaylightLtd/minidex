@@ -25,6 +25,7 @@ services:
       context: .
     environment:
       <<: *shared_environment
+      AUTH_CACHE_CHECKSUM_SECRET: ${AUTH_CACHE_CHECKSUM_SECRET}
       SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
     depends_on:
       - db

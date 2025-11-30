@@ -10,10 +10,14 @@ import VaporRedisUtils
 
 @Suite("AuthController", .serialized)
 struct AuthControllerTests {
+    static let cacheExpiration: TimeInterval = 30
+
     static func registerController(app: Application) throws {
         try app.register(collection: AuthController(
             tokenLength: 32,
             accessTokenExpiration: 60*60,
+            cacheExpiration: cacheExpiration,
+            checksumSecret: "test-secret",
             newUserRoles: .tester,
             rolesConverter: .test,
         ))
@@ -33,7 +37,7 @@ struct AuthControllerTests {
             try context.redis.assertAuthCacheSet(
                 accessToken: context.token,
                 userID: context.userID,
-                ttl: context.expiresIn,
+                ttl: Int(Self.cacheExpiration),
             )
         }
     }
@@ -147,32 +151,6 @@ struct AuthControllerTests {
             #expect(tokens.first?.isRevoked == true)
 
             try context.redis.assertAuthCacheCleared(accessToken: context.token)
-        }
-    }
-
-    @Test("logout fails when token missing")
-    func logoutWithMissingTokenFails() async throws {
-        try await AuthenticatedTestContext.run(
-            username: "cilan",
-            roles: .admin,
-        ) { context in
-            let app = context.app
-
-            let token = try await DBUserToken.query(on: app.db)
-                .filter(\.$user.$id == context.userID)
-                .first()
-            try await token?.delete(on: app.db)
-
-            try await app.testing().test(
-                .POST,
-                "v1/auth/logout",
-                beforeRequest: { req in
-                    req.headers.bearerAuthorization = .init(token: context.token)
-                },
-                afterResponse: { res async in
-                    #expect(res.status == .unauthorized)
-                }
-            )
         }
     }
 
@@ -310,7 +288,7 @@ struct AuthControllerTests {
             try context.redis.assertAuthCacheSet(
                 accessToken: response.accessToken,
                 userID: response.userId,
-                ttl: response.expiresIn,
+                ttl: Int(Self.cacheExpiration),
             )
         }
     }

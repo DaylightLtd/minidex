@@ -6,19 +6,23 @@ import VaporRedisUtils
 import VaporUtils
 
 public struct TokenAuthenticator: AsyncBearerAuthenticator {
-    public init() {}
+    let cacheExpiration: TimeInterval
+    let checksumSecret: String
+
+    public init(cacheExpiration: TimeInterval, checksumSecret: String) {
+        self.cacheExpiration = cacheExpiration
+        self.checksumSecret = checksumSecret
+    }
 
     public func authenticate(bearer: BearerAuthorization, for request: Request) async throws {
-        if let cached = await request.redisClient.getCachedUser(accessToken: bearer.token, logger: request.logger) {
+        if let cached = await request.redisClient.getCachedUser(
+            accessToken: bearer.token,
+            checksumSecret: checksumSecret,
+            logger: request.logger
+        ) {
+            // Tokens are short-lived in cache so we trust them without additional checks
             request.logger.debug("Token auth cache hit for userID: \(cached.id)")
-            // Check token state even on cache hit
-            if let tokenID = cached.tokenID,
-               let token = try await DBUserToken.find(tokenID, on: request.db),
-               request.tokenClient.isTokenValid(token)
-            {
-                request.logger.debug("Cached token valid for userID: \(cached.id)")
-                request.auth.login(cached)
-            }
+            request.auth.login(cached)
             return
         }
 
@@ -46,6 +50,8 @@ public struct TokenAuthenticator: AsyncBearerAuthenticator {
                 hashedAccessToken: hash.base64URLEncodedString(),
                 user: user,
                 accessTokenExpiration: token.expiresAt.timeIntervalSinceNow,
+                cacheExpiration: cacheExpiration,
+                checksumSecret: checksumSecret,
                 logger: request.logger,
             )
             request.logger.debug("Auth token verified for userID: \(user.id)")

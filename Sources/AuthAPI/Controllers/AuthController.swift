@@ -32,17 +32,23 @@ struct RegisterIn: Content, Validatable {
 public struct AuthController: RouteCollection, Sendable {
     let tokenLength: Int
     let accessTokenExpiration: TimeInterval
+    let cacheExpiration: TimeInterval
+    let checksumSecret: String
     let newUserRoles: Roles
     let rolesConverter: RolesConverter
 
     public init(
         tokenLength: Int,
         accessTokenExpiration: TimeInterval,
+        cacheExpiration: TimeInterval,
+        checksumSecret: String,
         newUserRoles: Roles,
         rolesConverter: RolesConverter,
     ) {
         self.tokenLength = tokenLength
         self.accessTokenExpiration = accessTokenExpiration
+        self.cacheExpiration = cacheExpiration
+        self.checksumSecret = checksumSecret
         self.newUserRoles = newUserRoles
         self.rolesConverter = rolesConverter
     }
@@ -56,7 +62,7 @@ public struct AuthController: RouteCollection, Sendable {
             .post("login", use: self.login)
 
         let behindToken = group
-            .grouped(TokenAuthenticator())
+            .grouped(TokenAuthenticator(cacheExpiration: cacheExpiration, checksumSecret: checksumSecret))
             .grouped(AuthUser.guardMiddleware())
 
         behindToken.get("me", use: self.me)
@@ -86,6 +92,8 @@ public struct AuthController: RouteCollection, Sendable {
             hashedAccessToken: token.hashedEncoded,
             user: user,
             accessTokenExpiration: accessTokenExpiration,
+            cacheExpiration: cacheExpiration,
+            checksumSecret: checksumSecret,
             logger: req.logger,
         )
 
@@ -172,6 +180,8 @@ public struct AuthController: RouteCollection, Sendable {
             hashedAccessToken: token.hashedEncoded,
             user: user,
             accessTokenExpiration: userToken.expiresAt.timeIntervalSinceNow,
+            cacheExpiration: cacheExpiration,
+            checksumSecret: checksumSecret,
             logger: req.logger,
         )
 
