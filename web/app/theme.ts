@@ -192,6 +192,31 @@ const buildTheme = (mode: "light" | "dark") => {
           },
         },
       },
+      MuiTableContainer: {
+        styleOverrides: {
+          root: {
+            overflowX: "auto",
+            "& .MuiTable-root": {
+              minWidth: 800, // Ensure table has minimum width for readability
+            },
+          },
+        },
+      },
+      MuiTablePagination: {
+        styleOverrides: {
+          root: {
+            overflowX: "auto",
+            "& .MuiTablePagination-toolbar": {
+              flexWrap: "wrap",
+              gap: 1,
+            },
+            "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows":
+              {
+                m: 0,
+              },
+          },
+        },
+      },
     },
   });
 };
