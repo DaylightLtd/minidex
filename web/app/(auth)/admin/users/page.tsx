@@ -274,7 +274,8 @@ export default function UsersManagementPage() {
                 value={searchQuery}
                 onChange={handleSearchChange}
                 size="small"
-                sx={{ maxWidth: 400 }}
+                fullWidth
+                sx={{ maxWidth: { xs: "100%", sm: 400 } }}
                 InputProps={{
                   endAdornment: searchQuery ? (
                     <InputAdornment position="end">
@@ -290,7 +291,16 @@ export default function UsersManagementPage() {
                 }}
               />
             </Stack>
-            <TableContainer component={Paper} variant="outlined">
+            <TableContainer
+              component={Paper}
+              variant="outlined"
+              sx={{
+                overflowX: "auto",
+                "& .MuiTable-root": {
+                  minWidth: 800, // Ensure table has minimum width for readability
+                },
+              }}
+            >
               <Table>
                 <TableHead>
                   <TableRow>
@@ -446,6 +456,17 @@ export default function UsersManagementPage() {
               rowsPerPage={rowsPerPage}
               onRowsPerPageChange={handleChangeRowsPerPage}
               rowsPerPageOptions={[10, 25, 50, 100]}
+              sx={{
+                overflowX: "auto",
+                "& .MuiTablePagination-toolbar": {
+                  flexWrap: "wrap",
+                  gap: 1,
+                },
+                "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows":
+                  {
+                    m: 0,
+                  },
+              }}
             />
           </CardContent>
         </Card>
