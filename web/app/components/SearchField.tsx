@@ -13,6 +13,7 @@ type SearchFieldProps = Omit<TextFieldProps, "InputProps"> & {
   value: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClear?: () => void;
+  InputProps?: TextFieldProps["InputProps"];
 };
 
 export function SearchField({
@@ -53,4 +54,3 @@ export function SearchField({
     />
   );
 }
-

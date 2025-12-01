@@ -111,19 +111,10 @@ const darkPalette = {
 const typography = {
   fontFamily: `"Inter", "Roboto", "Helvetica", "Arial", sans-serif`,
   h1: { fontSize: "2.5rem", fontWeight: 700 },
-  h2: {
-    fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
-    fontWeight: 700,
-  },
+  h2: { fontSize: "2rem", fontWeight: 700 },
   h3: { fontSize: "1.75rem", fontWeight: 600 },
-  h4: {
-    fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
-    fontWeight: 600,
-  },
-  h5: {
-    fontSize: { xs: "1.1rem", sm: "1.25rem", md: "1.5rem" },
-    fontWeight: 600,
-  },
+  h4: { fontSize: "1.5rem", fontWeight: 600 },
+  h5: { fontSize: "1.25rem", fontWeight: 600 },
   h6: { fontSize: "1.1rem", fontWeight: 600 },
   body1: { fontSize: "1rem" },
   body2: { fontSize: "0.875rem" },
@@ -165,14 +156,56 @@ const buildTheme = (mode: "light" | "dark") => {
           a: { color: "inherit" },
         },
       },
+      MuiTypography: {
+        styleOverrides: {
+          h2: ({ theme }) => ({
+            [theme.breakpoints.down("sm")]: {
+              fontSize: "2rem",
+            },
+            [theme.breakpoints.between("sm", "md")]: {
+              fontSize: "2.5rem",
+            },
+            [theme.breakpoints.up("md")]: {
+              fontSize: "3rem",
+            },
+          }),
+          h4: ({ theme }) => ({
+            [theme.breakpoints.down("sm")]: {
+              fontSize: "1.5rem",
+            },
+            [theme.breakpoints.between("sm", "md")]: {
+              fontSize: "1.75rem",
+            },
+            [theme.breakpoints.up("md")]: {
+              fontSize: "2rem",
+            },
+          }),
+          h5: ({ theme }) => ({
+            [theme.breakpoints.down("sm")]: {
+              fontSize: "1.1rem",
+            },
+            [theme.breakpoints.between("sm", "md")]: {
+              fontSize: "1.25rem",
+            },
+            [theme.breakpoints.up("md")]: {
+              fontSize: "1.5rem",
+            },
+          }),
+        },
+      },
       MuiButton: {
         styleOverrides: {
-          root: {
+          root: ({ theme }) => ({
             borderRadius: 12,
             textTransform: "none",
             fontWeight: 600,
-            width: { xs: "100%", sm: "auto" },
-          },
+            [theme.breakpoints.down("sm")]: {
+              width: "100%",
+            },
+            [theme.breakpoints.up("sm")]: {
+              width: "auto",
+            },
+          }),
         },
       },
       MuiCard: {
@@ -187,9 +220,14 @@ const buildTheme = (mode: "light" | "dark") => {
       },
       MuiCardContent: {
         styleOverrides: {
-          root: {
-            padding: { xs: "8px", sm: "16px" },
-          },
+          root: ({ theme }) => ({
+            [theme.breakpoints.down("sm")]: {
+              padding: "8px",
+            },
+            [theme.breakpoints.up("sm")]: {
+              padding: "16px",
+            },
+          }),
         },
       },
       MuiOutlinedInput: {
