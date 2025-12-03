@@ -16,7 +16,7 @@ import { ChangeEvent, FormEvent, Suspense, useState } from "react";
 
 import { AuthCard } from "@/app/components/AuthCard";
 import { PasswordField } from "@/app/components/PasswordField";
-import { useCurrentUser, type UserRole } from "@/app/context/user-context";
+import { useCurrentUser, type UserRole } from "@/app/providers/user-provider";
 import { registerMessages as m } from "@/app/register/messages";
 import { normalizeReturnUrl } from "@/app/utils/normalize-return-url";
 import { useApiMutation } from "@/lib/hooks/use-api-mutation";

@@ -16,8 +16,8 @@ import { FormEvent, Suspense, useState } from "react";
 
 import { AuthCard } from "@/app/components/AuthCard";
 import { PasswordField } from "@/app/components/PasswordField";
-import { useCurrentUser, type UserRole } from "@/app/context/user-context";
 import { loginMessages as m } from "@/app/login/messages";
+import { useCurrentUser, type UserRole } from "@/app/providers/user-provider";
 import { normalizeReturnUrl } from "@/app/utils/normalize-return-url";
 import { ApiError } from "@/lib/api-client";
 import { getFriendlyErrorMessage } from "@/lib/errors";
