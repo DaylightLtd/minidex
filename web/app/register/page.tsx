@@ -15,6 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChangeEvent, FormEvent, Suspense, useState } from "react";
 
 import { AuthCard } from "@/app/components/AuthCard";
+import { BlurredBackground } from "@/app/components/BlurredBackground";
 import { PasswordField } from "@/app/components/PasswordField";
 import { useCurrentUser, type UserRole } from "@/app/providers/user-provider";
 import { registerMessages as m } from "@/app/register/messages";
@@ -35,15 +36,17 @@ type RegisterResponse = {
 
 export default function RegisterPage() {
   return (
-    <Suspense
-      fallback={
-        <AuthCard maxWidth="sm" elevation={1}>
-          <Typography variant="h5">Loading...</Typography>
-        </AuthCard>
-      }
-    >
-      <RegisterForm />
-    </Suspense>
+    <BlurredBackground>
+      <Suspense
+        fallback={
+          <AuthCard maxWidth="sm" elevation={1}>
+            <Typography variant="h5">Loading...</Typography>
+          </AuthCard>
+        }
+      >
+        <RegisterForm />
+      </Suspense>
+    </BlurredBackground>
   );
 }
 

@@ -15,6 +15,7 @@ import { enqueueSnackbar } from "notistack";
 import { FormEvent, Suspense, useState } from "react";
 
 import { AuthCard } from "@/app/components/AuthCard";
+import { BlurredBackground } from "@/app/components/BlurredBackground";
 import { PasswordField } from "@/app/components/PasswordField";
 import { loginMessages as m } from "@/app/login/messages";
 import { useCurrentUser, type UserRole } from "@/app/providers/user-provider";
@@ -31,15 +32,17 @@ type LoginResponse = {
 
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <AuthCard maxWidth="sm" elevation={1}>
-          <Typography variant="h5">Loading...</Typography>
-        </AuthCard>
-      }
-    >
-      <LoginForm />
-    </Suspense>
+    <BlurredBackground>
+      <Suspense
+        fallback={
+          <AuthCard maxWidth="sm" elevation={1}>
+            <Typography variant="h5">Loading...</Typography>
+          </AuthCard>
+        }
+      >
+        <LoginForm />
+      </Suspense>
+    </BlurredBackground>
   );
 }
 
