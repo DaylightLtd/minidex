@@ -3,7 +3,7 @@
 import { Box, BoxProps } from "@mui/material";
 import { ReactNode } from "react";
 
-type BlurredBackgroundProps = {
+type IntroBackgroundProps = {
   children: ReactNode;
   smallScreenImage?: string;
   largeScreenImage?: string;
@@ -12,7 +12,7 @@ type BlurredBackgroundProps = {
   scale?: number;
 } & Omit<BoxProps, "children">;
 
-export function BlurredBackground({
+export function IntroBackground({
   children,
   smallScreenImage = "/images/minidex_portrait.jpg",
   largeScreenImage = "/images/minidex_square.jpg",
@@ -20,7 +20,7 @@ export function BlurredBackground({
   overlayColor = "rgba(0, 0, 0, 0.25)",
   scale = 1.1,
   ...boxProps
-}: BlurredBackgroundProps) {
+}: IntroBackgroundProps) {
   return (
     <>
       <Box

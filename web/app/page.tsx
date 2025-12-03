@@ -3,12 +3,12 @@
 import { Box, Button, Stack } from "@mui/material";
 import Link from "next/link";
 
-import { BlurredBackground } from "@/app/components/BlurredBackground";
+import { IntroBackground } from "@/app/components/IntroBackground";
 import { metallicButtonStyle } from "@/app/theme";
 
 export default function Home() {
   return (
-    <BlurredBackground blurAmount="0px" overlayColor={undefined} scale={1}>
+    <IntroBackground blurAmount="0px" overlayColor={undefined} scale={1}>
       <Box
         sx={{
           display: "flex",
@@ -60,6 +60,6 @@ export default function Home() {
           </Button>
         </Stack>
       </Box>
-    </BlurredBackground>
+    </IntroBackground>
   );
 }
