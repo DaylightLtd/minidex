@@ -16,9 +16,9 @@ export function IntroBackground({
   children,
   smallScreenImage = "/images/minidex_portrait.jpg",
   largeScreenImage = "/images/minidex_square.jpg",
-  blurAmount = "8px",
+  blurAmount = "4px",
   overlayColor = "rgba(0, 0, 0, 0.25)",
-  scale = 1.1,
+  scale = 1,
   ...boxProps
 }: IntroBackgroundProps) {
   return (

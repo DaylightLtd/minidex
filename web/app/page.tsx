@@ -8,7 +8,7 @@ import { metallicButtonStyle } from "@/app/theme";
 
 export default function Home() {
   return (
-    <IntroBackground blurAmount="0px" overlayColor={undefined} scale={1}>
+    <IntroBackground blurAmount="0px" overlayColor={"none"} scale={1}>
       <Box
         sx={{
           display: "flex",
