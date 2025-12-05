@@ -32,6 +32,7 @@ import {
 import { UserAvatar } from "@/app/(auth)/components/UserAvatar";
 import { useCurrentProfile } from "@/app/(auth)/hooks/use-current-profile";
 import { layoutMessages as m } from "@/app/(auth)/messages";
+import { ColorModeSwitch } from "@/app/components/ColorModeSwitch";
 import { useCurrentUser } from "@/app/providers/user-provider";
 
 const DRAWER_WIDTH = 260;
@@ -209,6 +210,8 @@ export default function AuthenticatedLayout({
           </IconButton>
 
           <Box sx={{ flexGrow: 1 }} />
+
+          <ColorModeSwitch />
 
           <IconButton onClick={handleAvatarClick} disabled={isProfileLoading}>
             <UserAvatar
