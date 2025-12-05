@@ -33,7 +33,7 @@ import { UserAvatar } from "@/app/(auth)/components/UserAvatar";
 import { useCurrentProfile } from "@/app/(auth)/hooks/use-current-profile";
 import { layoutMessages as m } from "@/app/(auth)/messages";
 import { ColorModeSwitch } from "@/app/components/ColorModeSwitch";
-import { useCurrentUser } from "@/app/providers/user-provider";
+import { useCurrentUser } from "@/app/contexts/user-context";
 
 const DRAWER_WIDTH = 260;
 
