@@ -87,8 +87,8 @@ struct GameSystemController: RestCrudController {
             .grouped(RequireAnyRolesMiddleware(roles: [.admin, .cataloguer]))
 
         root.get(use: self.index)
-        root.post(use: self.create { dto, req in
-            .init(
+        root.post(use: self.createCatalogItem(\.visibility) { dto, req in
+            return .init(
                 name: dto.name,
                 publisher: dto.publisher,
                 releaseYear: dto.releaseYear,
@@ -99,14 +99,20 @@ struct GameSystemController: RestCrudController {
         })
         root.group(":id") { route in
             route.get(use: self.get)
-            route.patch(use: self.update { dbModel, patch in
-                if let value = patch.name { dbModel.name = value }
-                if let value = patch.publisher { dbModel.publisher = value }
-                if let value = patch.releaseYear { dbModel.releaseYear = value }
-                if let value = patch.website { dbModel.website = value.absoluteString }
-                if let value = patch.visibility { dbModel.visibility = value }
-            })
-            route.delete(use: self.delete)
+            route.patch(
+                use: self.updateCatalogItem(
+                    createdByPath: \.$createdBy,
+                    visibilityDBPath: \.visibility,
+                    visibilityDTOPath: \.visibility,
+                ) { dbModel, patch, _ in
+                    if let value = patch.name { dbModel.name = value }
+                    if let value = patch.publisher { dbModel.publisher = value }
+                    if let value = patch.releaseYear { dbModel.releaseYear = value }
+                    if let value = patch.website { dbModel.website = value.absoluteString }
+                    if let value = patch.visibility { dbModel.visibility = value }
+                }
+            )
+            route.delete(use: deleteCatalogItem(createdByPath: \.$createdBy, visibilityPath: \.visibility))
         }
     }
 }

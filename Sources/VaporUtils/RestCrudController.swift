@@ -163,20 +163,27 @@ extension RestCrudController {
     }
 
     public func update(
-        mutate: @Sendable @escaping (DBModel, PatchDTO) -> Void,
+        mutate: @Sendable @escaping (DBModel, PatchDTO, Request) throws -> Void,
     ) -> @Sendable (Request) async throws -> DTO {
         return { req in
             let dbModel = try await findOneOrThrow(req: req)
             let patch = try req.content.decode(PatchDTO.self)
-            mutate(dbModel, patch)
+            try mutate(dbModel, patch, req)
             try await dbModel.save(on: req.db)
             return try toDTO(dbModel)
         }
     }
 
-    public func delete(req: Request) async throws -> HTTPStatus {
-        let dbModel = try await findOneOrThrow(req: req)
-        try await dbModel.delete(on: req.db)
-        return .noContent
+    public func delete(
+        canDelete: (@Sendable (DBModel, Request) throws -> Bool)? = nil,
+    ) -> @Sendable (Request) async throws -> HTTPStatus {
+        return { req in
+            let dbModel = try await findOneOrThrow(req: req)
+            guard try canDelete?(dbModel, req) ?? true else {
+                throw Abort(.forbidden)
+            }
+            try await dbModel.delete(on: req.db)
+            return .noContent
+        }
     }
 }
