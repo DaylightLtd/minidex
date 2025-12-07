@@ -1,6 +1,6 @@
 "use client";
 
-import { UserRole } from "@/app/contexts/user-context";
+import { useCurrentUser, UserRole } from "@/app/contexts/user-context";
 import { useApiQuery } from "@/lib/hooks/use-api-query";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -28,10 +28,19 @@ type UseUsersOptions = {
   sort?: string;
   order?: "asc" | "desc";
   query?: string;
+  enabled?: boolean;
 };
 
 export function useUsers(options?: UseUsersOptions) {
-  const { page = 0, limit = 25, sort, order, query } = options ?? {};
+  const { user } = useCurrentUser();
+  const {
+    page = 0,
+    limit = 25,
+    sort,
+    order,
+    query,
+    enabled: optionsEnabled = true,
+  } = options ?? {};
 
   const params: Record<string, string> = {
     page: page.toString(),
@@ -53,5 +62,6 @@ export function useUsers(options?: UseUsersOptions) {
     queryKey: queryKeys.users(page, limit, sort, order, query),
     path: "/v1/admin/users",
     request: { params },
+    enabled: user !== null && optionsEnabled,
   });
 }

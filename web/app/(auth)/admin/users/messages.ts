@@ -10,7 +10,6 @@ export const usersPageMessages = {
   profileID: "Profile ID",
   noUsers: "No users found",
   loading: "Loading users...",
-  actions: "Actions",
   updateRoles: "Update Roles",
   updateProfile: "Update Profile",
   activate: "Activate",

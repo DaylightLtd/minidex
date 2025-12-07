@@ -7,7 +7,6 @@ export const gameSystemsMessages = {
   website: "Website",
   visibility: "Visibility",
   createdBy: "Created By",
-  actions: "Actions",
   add: "Add Game System",
   searchPlaceholder: "Search by name",
   noResults: "No game systems found",
