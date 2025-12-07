@@ -64,8 +64,8 @@ struct FactionController: RestCrudController {
         }
         if params.include?.contains(.parentFaction) == true {
             query = query.join(
-                DBFaction.self,
-                on: \DBFaction.$parentFaction.$id == \DBFaction.$id,
+                DBParentFaction.self,
+                on: \DBFaction.$parentFaction.$id == \DBParentFaction.$id,
                 method: .left,
             )
         }
@@ -75,14 +75,14 @@ struct FactionController: RestCrudController {
 
     func toDTO(_ dbModel: DBFaction) throws -> DTO {
         let dbGameSystem = try? dbModel.joined(DBGameSystem.self)
-        let dbParentFaction = try? dbModel.joined(DBFaction.self)
+        let dbParentFaction = try? dbModel.joined(DBParentFaction.self)
         return try .init(
             id: dbModel.requireID(),
             name: dbModel.name,
             gameSystemID: dbModel.$gameSystem.id,
-            gameSystemName: dbGameSystem?.name,
+            gameSystemName: dbGameSystem?.$name.value,
             parentFactionID: dbModel.$parentFaction.id,
-            parentFactionName: dbParentFaction?.name,
+            parentFactionName: dbParentFaction?.$name.value,
             createdByID: dbModel.$createdBy.id,
             visibility: dbModel.visibility,
         )

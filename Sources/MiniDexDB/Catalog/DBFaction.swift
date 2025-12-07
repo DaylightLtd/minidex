@@ -42,6 +42,12 @@ public final class DBFaction: Model, @unchecked Sendable {
     }
 }
 
+public final class DBParentFaction: ModelAlias {
+    public static let name = "parent_factions"
+    public let model = DBFaction()
+    public init() {}
+}
+
 extension DBFaction: CustomStringConvertible {
     public var description: String {
         name
