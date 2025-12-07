@@ -1,4 +1,4 @@
-public enum CatalogItemVisibility: String, Codable, Sendable {
+public enum CatalogItemVisibility: String, Codable, Sendable, CaseIterable {
     /// Private catalog items are visible only to the creator.
     case `private`
     /// Limited catalog items are visible to the creator and cataloguers.

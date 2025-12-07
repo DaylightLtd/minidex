@@ -84,7 +84,6 @@ struct GameSystemController: RestCrudController {
             .grouped("v1", "gamesystems")
             .grouped(TokenAuthenticator())
             .grouped(AuthUser.guardMiddleware())
-            .grouped(RequireAnyRolesMiddleware(roles: [.admin, .cataloguer]))
 
         root.get(use: self.index)
         root.post(use: self.createCatalogItem(\.visibility) { dto, req in

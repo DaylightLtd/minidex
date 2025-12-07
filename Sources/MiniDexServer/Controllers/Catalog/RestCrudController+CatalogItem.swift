@@ -97,7 +97,7 @@ extension RestCrudController {
     /// Update operation for catalog items with permission checks.
     ///
     /// - `admin` user can always update items.
-    /// - `cataloguer` users can update their own `private` items and all `public` items.
+    /// - `cataloguer` users can update their own `private` and `limited` items and all `public` items.
     /// - `hobbyist` users can update their own `private` and `limited` items.
     func updateCatalogItem(
         createdByPath: KeyPath<DBModel, ParentProperty<DBModel, DBUser>>,
@@ -126,7 +126,7 @@ extension RestCrudController {
             if user.roles.contains(.cataloguer) {
                 canPatch = canPatch
                     || (currentVisibility == .`public` && desiredVisibility == .`public`)
-                    || (isOwnedByUser && currentVisibility == .`private` && desiredVisibility == .`private`)
+                    || (isOwnedByUser && currentVisibility == desiredVisibility)
             }
 
             guard canPatch else { throw Abort(.forbidden) }
