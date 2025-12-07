@@ -51,6 +51,7 @@ services:
     image: minidex-server:latest
     environment:
       <<: *shared_environment
+      AUTH_CACHE_CHECKSUM_SECRET: ${AUTH_CACHE_CHECKSUM_SECRET}
     depends_on:
       - db
     command: ["migrate", "--yes"]
@@ -61,6 +62,7 @@ services:
     image: minidex-server:latest
     environment:
       <<: *shared_environment
+      AUTH_CACHE_CHECKSUM_SECRET: ${AUTH_CACHE_CHECKSUM_SECRET}
     depends_on:
       - db
     command: ["migrate", "--revert", "--yes"]

@@ -26,7 +26,7 @@ struct ControllerPaginationTests {
             // Create more than default limit (25) items
             let totalItems = 30
             for i in 1...totalItems {
-                let gameSystem = DBGameSystem(name: "System \(i)")
+                let gameSystem = DBGameSystem(name: "System \(i)", createdByID: context.userID)
                 try await gameSystem.save(on: app.db)
             }
 
@@ -55,7 +55,7 @@ struct ControllerPaginationTests {
 
             // Create test data
             for i in 1...10 {
-                let gameSystem = DBGameSystem(name: "System \(i)")
+                let gameSystem = DBGameSystem(name: "System \(i)", createdByID: context.userID)
                 try await gameSystem.save(on: app.db)
             }
 
@@ -85,7 +85,7 @@ struct ControllerPaginationTests {
             // Create test data
             var firstPageIds: [UUID] = []
             for i in 1...10 {
-                let gameSystem = DBGameSystem(name: "System \(i)")
+                let gameSystem = DBGameSystem(name: "System \(i)", createdByID: context.userID)
                 try await gameSystem.save(on: app.db)
                 if i <= 5 {
                     firstPageIds.append(try gameSystem.requireID())

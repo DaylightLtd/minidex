@@ -24,9 +24,9 @@ struct ControllerSortingTests {
             try app.register(collection: GameSystemController())
 
             // Create test data in reverse order
-            try await DBGameSystem(name: "Zebra System").save(on: app.db)
-            try await DBGameSystem(name: "Alpha System").save(on: app.db)
-            try await DBGameSystem(name: "Beta System").save(on: app.db)
+            try await DBGameSystem(name: "Zebra System", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "Alpha System", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "Beta System", createdByID: context.userID).save(on: app.db)
 
             try await app.testing().test(.GET, "/v1/gamesystems?sort=name", beforeRequest: { req in
                 req.headers.bearerAuthorization = .init(token: token)
@@ -54,9 +54,9 @@ struct ControllerSortingTests {
             try app.register(collection: GameSystemController())
 
             // Create test data
-            try await DBGameSystem(name: "Zebra System").save(on: app.db)
-            try await DBGameSystem(name: "Alpha System").save(on: app.db)
-            try await DBGameSystem(name: "Beta System").save(on: app.db)
+            try await DBGameSystem(name: "Zebra System", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "Alpha System", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "Beta System", createdByID: context.userID).save(on: app.db)
 
             try await app.testing().test(.GET, "/v1/gamesystems?sort=Name&order=asc", beforeRequest: { req in
                 req.headers.bearerAuthorization = .init(token: token)
@@ -84,9 +84,9 @@ struct ControllerSortingTests {
             try app.register(collection: GameSystemController())
 
             // Create test data
-            try await DBGameSystem(name: "Alpha System").save(on: app.db)
-            try await DBGameSystem(name: "Beta System").save(on: app.db)
-            try await DBGameSystem(name: "Zebra System").save(on: app.db)
+            try await DBGameSystem(name: "Alpha System", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "Beta System", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "Zebra System", createdByID: context.userID).save(on: app.db)
 
             try await app.testing().test(.GET, "/v1/gamesystems?sort=name&order=desc", beforeRequest: { req in
                 req.headers.bearerAuthorization = .init(token: token)

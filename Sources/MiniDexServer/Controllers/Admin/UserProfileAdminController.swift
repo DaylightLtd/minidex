@@ -68,7 +68,7 @@ struct UserProfileAdminController: RestCrudController {
                         avatarURL: dto.avatarURL?.absoluteString,
                     )
                 })
-                root.patch(use: self.update { dbModel, patch in
+                root.patch(use: self.update { dbModel, patch, _ in
                     if let value = patch.displayName { dbModel.displayName = value }
                     if let value = patch.avatarURL { dbModel.avatarURL = value.absoluteString }
                 })

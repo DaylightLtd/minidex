@@ -24,10 +24,10 @@ struct ControllerFilteringTests {
             try app.register(collection: GameSystemController())
 
             // Create test data
-            try await DBGameSystem(name: "Warhammer 40k").save(on: app.db)
-            try await DBGameSystem(name: "Warhammer Fantasy").save(on: app.db)
-            try await DBGameSystem(name: "Dungeons & Dragons").save(on: app.db)
-            try await DBGameSystem(name: "Pathfinder").save(on: app.db)
+            try await DBGameSystem(name: "Warhammer 40k", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "Warhammer Fantasy", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "Dungeons & Dragons", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "Pathfinder", createdByID: context.userID).save(on: app.db)
 
             try await app.testing().test(.GET, "/v1/gamesystems?q=Warhammer", beforeRequest: { req in
                 req.headers.bearerAuthorization = .init(token: token)
@@ -53,8 +53,8 @@ struct ControllerFilteringTests {
             try app.register(collection: GameSystemController())
 
             // Create test data
-            try await DBGameSystem(name: "Warhammer 40k").save(on: app.db)
-            try await DBGameSystem(name: "Dungeons & Dragons").save(on: app.db)
+            try await DBGameSystem(name: "Warhammer 40k", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "Dungeons & Dragons", createdByID: context.userID).save(on: app.db)
 
             try await app.testing().test(.GET, "/v1/gamesystems?q=Nonexistent", beforeRequest: { req in
                 req.headers.bearerAuthorization = .init(token: token)
@@ -79,8 +79,8 @@ struct ControllerFilteringTests {
             try app.register(collection: GameSystemController())
 
             // Create test data
-            try await DBGameSystem(name: "Warhammer 40k").save(on: app.db)
-            try await DBGameSystem(name: "warhammer fantasy").save(on: app.db)
+            try await DBGameSystem(name: "Warhammer 40k", createdByID: context.userID).save(on: app.db)
+            try await DBGameSystem(name: "warhammer fantasy", createdByID: context.userID).save(on: app.db)
 
             try await app.testing().test(.GET, "/v1/gamesystems?q=Warhammer", beforeRequest: { req in
                 req.headers.bearerAuthorization = .init(token: token)

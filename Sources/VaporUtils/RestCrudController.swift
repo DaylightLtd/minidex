@@ -51,7 +51,7 @@ public protocol RestCrudController: RouteCollection, Sendable {
     /// Called by `index` to build the base query for fetching a list of
     /// models, before applying any filtering, sorting or pagination.
     /// Default implementation returns the default query for `DBModel`.
-    func findMany(req: Request) -> QueryBuilder<DBModel>
+    func findMany(req: Request) throws -> QueryBuilder<DBModel>
 
     /// Mapping from `DTO` to `DBModel`, no default implementation.
     func toDTO(_ dbModel: DBModel) throws -> DTO
@@ -81,7 +81,7 @@ extension RestCrudController {
         return model
     }
 
-    public func findMany(req: Request) -> QueryBuilder<DBModel> {
+    public func findMany(req: Request) throws -> QueryBuilder<DBModel> {
         DBModel.query(on: req.db)
     }
 
@@ -100,7 +100,7 @@ extension RestCrudController {
     public func index(req: Request) async throws -> PagedResponse<DTO> {
         let params = try req.query.decode(ListQueryParams.self)
 
-        var query = findMany(req: req)
+        var query = try findMany(req: req)
 
         // Search
         if let filteredQuery = params.q.flatMap({ indexFilter($0, query: query) }) {
@@ -163,20 +163,27 @@ extension RestCrudController {
     }
 
     public func update(
-        mutate: @Sendable @escaping (DBModel, PatchDTO) -> Void,
+        mutate: @Sendable @escaping (DBModel, PatchDTO, Request) throws -> Void,
     ) -> @Sendable (Request) async throws -> DTO {
         return { req in
             let dbModel = try await findOneOrThrow(req: req)
             let patch = try req.content.decode(PatchDTO.self)
-            mutate(dbModel, patch)
+            try mutate(dbModel, patch, req)
             try await dbModel.save(on: req.db)
             return try toDTO(dbModel)
         }
     }
 
-    public func delete(req: Request) async throws -> HTTPStatus {
-        let dbModel = try await findOneOrThrow(req: req)
-        try await dbModel.delete(on: req.db)
-        return .noContent
+    public func delete(
+        canDelete: (@Sendable (DBModel, Request) throws -> Bool)? = nil,
+    ) -> @Sendable (Request) async throws -> HTTPStatus {
+        return { req in
+            let dbModel = try await findOneOrThrow(req: req)
+            guard try canDelete?(dbModel, req) ?? true else {
+                throw Abort(.forbidden)
+            }
+            try await dbModel.delete(on: req.db)
+            return .noContent
+        }
     }
 }

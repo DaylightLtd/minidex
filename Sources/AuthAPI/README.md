@@ -9,23 +9,23 @@ Lightweight authentication module for MiniDex built on Vapor + Fluent. Exposes r
 ## Redis Caching
 
 ### Design
-Redis reduces authentication latency from ~5-10ms (database join) to ~1ms (Redis + PK lookup). The database is the authoritative source of truth for security state.
+Redis reduces authentication latency from ~5-10ms (database join) to <1ms (Redis lookup + checksum validation). On cache hit, cached user data is trusted without database verification, bounded by a 5-minute cache TTL. The database remains the authoritative source for token revocation and expiration.
 
 ### Cache Keys
-- `token:<access-token>` → JSON-encoded `AuthUser` (id, roles, isActive, tokenID)
+- `token:<access-token>` → JSON-encoded `CachedAuthUser` (wraps `AuthUser` with HMAC-SHA256 checksum for integrity validation)
 - `token_hash:<hashed-token>` → original access token string (enables cache invalidation by hash)
 
 ### Cache Hit Flow
-1. Check Redis for cached user
-2. **Verify token not revoked/expired in database** (always, even on cache hit)
-3. If valid, use cached user data
-
-This ensures logout and revocation take effect immediately, even when Redis is unavailable.
+1. Check Redis for cached user data
+2. Validate checksum to ensure data integrity (prevents cache tampering)
+3. If checksum invalid, delete corrupted entry and fall back to database
+4. If valid, use cached user data (no database verification for performance)
 
 ### Cache Miss Flow
 1. Query database: `DBUserToken` ⋈ `DBUser` filtered by token hash
 2. Validate token (not revoked, not expired)
-3. Cache result in Redis for future requests
+3. Wrap `AuthUser` in `CachedAuthUser` with HMAC-SHA256 checksum
+4. Cache result in Redis for future requests
 
 ### Cache Invalidation
 - **Logout**: Revokes token in DB, best-effort invalidates Redis keys
@@ -36,15 +36,21 @@ This ensures logout and revocation take effect immediately, even when Redis is u
 Redis failures are graceful:
 - Read failures → fall back to database
 - Write/invalidation failures → logged as ERROR, but system remains secure (DB revocation is sufficient)
+- Checksum validation failures → delete corrupted cache entry, fall back to database, log warning
 
 ### Security Guarantees
-1. **Token revocation is immediate**: Logout, revokeAccess, and user role/status changes revoke tokens in the database within a transaction
-2. **DB check on every request**: Even with cached user data, token revocation status is always verified against the database
-3. **No stale permissions**: Changing user roles/status force re-authentication (all existing tokens are revoked)
+1. **Cache integrity protection**: Cached auth data includes HMAC-SHA256 checksums to detect tampering. Invalid checksums cause automatic cache deletion and database fallback
+2. **Token revocation in database**: Logout, revokeAccess, and user role/status changes revoke tokens in the database within a transaction
+3. **No stale permissions**: Changing user roles/status force re-authentication (all existing tokens are revoked in database)
 4. **Idempotent updates**: Setting roles/status to their current values does not revoke tokens (avoids unnecessary session disruption)
 
+### Configuration
+- **Cache TTL**: 5 minutes (configurable via `Settings.Auth.cacheExpiration`)
+- **Token validity**: 24 hours in database (configurable via `Settings.Auth.accessTokenExpiration`)
+- **Checksum secret**: Required environment variable `AUTH_CACHE_CHECKSUM_SECRET` (should be 32+ random bytes, base64 or hex encoded)
+
 ### Known Limitations
-1. **Performance benefit is modest**: ~4-9ms savings per request. Redis was primarily added as a learning exercise
+1. **Revoked tokens may persist in cache**: If cache invalidation fails, revoked tokens can remain valid for up to 5 minutes (cache TTL). This is acceptable given the short cache lifetime and performance benefits
 2. **Role/status changes force re-login**: Users must re-authenticate after their roles or active status changes (this is intentional for security)
 
 ## Testing
