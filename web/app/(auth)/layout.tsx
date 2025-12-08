@@ -1,5 +1,6 @@
 "use client";
 
+import FlagOutlined from "@mui/icons-material/FlagOutlined";
 import HomeOutlined from "@mui/icons-material/HomeOutlined";
 import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -78,6 +79,11 @@ function SidebarContent({ isAdmin }: { isAdmin: boolean }) {
             label={m.gameSystems}
             href="/catalog/game-systems"
             icon={ShieldOutlined}
+          />
+          <NavItemChild
+            label={m.factions}
+            href="/catalog/factions"
+            icon={FlagOutlined}
           />
         </ExpandableNavItem>
         {isAdmin && (
