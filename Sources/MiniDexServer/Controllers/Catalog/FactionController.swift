@@ -33,12 +33,9 @@ struct FactionController: RestCrudController {
         var visibility: CatalogItemVisibility?
     }
 
-    struct ReadQuery: Content {
-        enum Includes: String, Codable, Sendable {
-            case gameSystem
-            case parentFaction
-        }
-        var include: Set<Includes>?
+    enum Includes: String, Codable, Sendable {
+        case gameSystem
+        case parentFaction
     }
 
     func findOne(req: Request) async throws -> DBFaction? {
@@ -54,7 +51,7 @@ struct FactionController: RestCrudController {
     func findMany(req: Request) throws -> QueryBuilder<DBFaction> {
         var query = try findManyCatalogItems(req: req, userPath: \.$createdBy, visibilityPath: \.$visibility)
 
-        let params = try req.query.decode(ReadQuery.self)
+        let params = try req.query.decode(ReadQuery<Includes>.self)
         if params.include?.contains(.gameSystem) == true {
             query = query.join(
                 DBGameSystem.self,
@@ -100,6 +97,10 @@ struct FactionController: RestCrudController {
         switch sort {
         case "name":
             query.sort(\.$name, order)
+        case "gamesystemname":
+            query.sort(DBGameSystem.self, \.$name)
+        case "parentFactionName":
+            query.sort(DBParentFaction.self, \.$name)
         case "visibility":
             query.sort(\.$visibility, order)
         default:
