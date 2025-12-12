@@ -9,12 +9,12 @@ import VaporUtils
 @Suite("Faction controller", .serialized)
 struct FactionControllerTests {
     typealias DTO = FactionController.DTO
+    typealias PatchDTO = FactionController.PatchDTO
 
     @Test("read factions with include query options")
     func readFactionsWithIncludes() async throws {
         try await AuthenticatedTestContext.run(
             migrations: MiniDexDB.migrations,
-            username: "jessie",
             roles: .cataloguer
         ) { context in
             let app = context.app
@@ -88,7 +88,6 @@ struct FactionControllerTests {
     func readSingleFactionWithIncludes() async throws {
         try await AuthenticatedTestContext.run(
             migrations: MiniDexDB.migrations,
-            username: "james",
             roles: .cataloguer
         ) { context in
             let app = context.app
@@ -148,6 +147,71 @@ struct FactionControllerTests {
 
             try await faction.delete(on: app.db)
             try await parentFaction.delete(on: app.db)
+        }
+    }
+
+    @Test("update parent to self fails")
+    func updateParentToSelf() async throws {
+        try await AuthenticatedTestContext.run(
+            migrations: MiniDexDB.migrations,
+            roles: .cataloguer
+        ) { context in
+            let app = context.app
+            try app.register(collection: FactionController())
+
+            let faction = DBFaction(
+                name: "Space Marines",
+                gameSystemID: nil,
+                createdByID: context.userID,
+                visibility: .`public`
+            )
+            try await faction.save(on: app.db)
+            let factionID = try faction.requireID()
+
+            try await app.testing().test(.PATCH, "/v1/factions/\(factionID)", beforeRequest: { req in
+                req.headers.bearerAuthorization = .init(token: context.token)
+                try req.content.encode(PatchDTO(parentFactionID: factionID))
+            }, afterResponse: { res async throws in
+                #expect(res.status == .conflict)
+            })
+        }
+    }
+
+    @Test("read single faction with include query options")
+    func deleteParentFaction() async throws {
+        try await AuthenticatedTestContext.run(
+            migrations: MiniDexDB.migrations,
+            roles: .cataloguer
+        ) { context in
+            let app = context.app
+            try app.register(collection: FactionController())
+
+            let parentFaction = DBFaction(
+                name: "Grand Alliance Order",
+                gameSystemID: nil,
+                createdByID: context.userID,
+                visibility: .`public`
+            )
+            try await parentFaction.save(on: app.db)
+
+            let faction = DBFaction(
+                name: "Stormcast Eternals",
+                gameSystemID: nil,
+                parentFactionID: try parentFaction.requireID(),
+                createdByID: context.userID,
+                visibility: .`public`
+            )
+            try await faction.save(on: app.db)
+
+            let parentFactionID = try parentFaction.requireID()
+
+            try await app.testing().test(.DELETE, "/v1/factions/\(parentFactionID)", beforeRequest: { req in
+                req.headers.bearerAuthorization = .init(token: context.token)
+            }, afterResponse: { res async throws in
+                #expect(res.status == .conflict)
+            })
+
+            try await faction.delete(on: app.db)
         }
     }
 }

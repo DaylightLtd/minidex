@@ -1,10 +1,5 @@
 import Fluent
-import FluentPostgresDriver
 import Vapor
-
-#if DEBUG
-import FluentSQLiteDriver
-#endif
 
 public enum PagedResponseSort: String, Content {
     case ascending = "asc"
@@ -43,6 +38,9 @@ public protocol RestCrudController: RouteCollection, Sendable {
     associatedtype PostDTO: Content
     associatedtype PatchDTO: Content
 
+    /// Message returned to the client when a constraint violation occurs.
+    var constraintFailureReason: String { get }
+
     /// Called by `get`, `update` and `delete` to find the model to operate on.
     /// Default implementation looks for `id` path parameter and looks up by
     /// primary key in database.
@@ -71,6 +69,10 @@ public protocol RestCrudController: RouteCollection, Sendable {
 
 extension RestCrudController {
     public var defaultLimit: Int { 25 }
+
+    public var constraintFailureReason: String {
+        "Constraint violation: the submitted data is invalid or conflicts with existing data."
+    }
 
     public func findOne(req: Request) async throws -> DBModel? {
         try await DBModel.find(req.parameters.require("id"), on: req.db)
@@ -143,21 +145,11 @@ extension RestCrudController {
         return { req in
             let input = try req.content.decode(PostDTO.self)
             let dbModel = try makeModel(input, req)
-#if DEBUG
             do {
                 try await dbModel.save(on: req.db)
-            } catch let error as PostgresError where error.code == .uniqueViolation {
-                throw Abort(.conflict)
-            } catch let error as SQLiteError where error.reason == .constraintUniqueFailed {
-                throw Abort(.conflict)
+            } catch let error as any DatabaseError where error.isConstraintFailure {
+                throw Abort(.conflict, reason: constraintFailureReason)
             }
-#else
-            do {
-                try await dbModel.save(on: req.db)
-            } catch let error as PostgresError where error.code == .uniqueViolation {
-                throw Abort(.conflict)
-            }
-#endif
             return try toDTO(dbModel)
         }
     }
@@ -169,7 +161,11 @@ extension RestCrudController {
             let dbModel = try await findOneOrThrow(req: req)
             let patch = try req.content.decode(PatchDTO.self)
             try mutate(dbModel, patch, req)
-            try await dbModel.save(on: req.db)
+            do {
+                try await dbModel.save(on: req.db)
+            } catch let error as any DatabaseError where error.isConstraintFailure {
+                throw Abort(.conflict, reason: constraintFailureReason)
+            }
             return try toDTO(dbModel)
         }
     }
@@ -182,7 +178,11 @@ extension RestCrudController {
             guard try canDelete?(dbModel, req) ?? true else {
                 throw Abort(.forbidden)
             }
-            try await dbModel.delete(on: req.db)
+            do {
+                try await dbModel.delete(on: req.db)
+            } catch let error as any DatabaseError where error.isConstraintFailure {
+                throw Abort(.conflict, reason: constraintFailureReason)
+            }
             return .noContent
         }
     }
