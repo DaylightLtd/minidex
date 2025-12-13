@@ -21,8 +21,9 @@ import {
 } from "@/app/(auth)/components/LookupDropdown";
 import { type UserRole } from "@/app/contexts/user-context";
 import { api } from "@/lib/api-client";
+import { useFormChanges } from "@/lib/hooks/use-form-changes";
 
-type FactionFormValues = {
+export type FactionFormValues = {
   name: string;
   gameSystemID: string | null;
   parentFactionID: string | null;
@@ -41,7 +42,7 @@ type FactionFormDialogProps = {
   currentFactionId?: string | null;
   userRoles: UserRole[];
   onClose: () => void;
-  onSave: (values: FactionFormValues) => void;
+  onSave: (values: FactionFormValues | Partial<FactionFormValues>) => void;
   isPending?: boolean;
 };
 
@@ -55,31 +56,40 @@ export function FactionFormDialog({
   onSave,
   isPending = false,
 }: FactionFormDialogProps) {
-  const [name, setName] = useState(initialValues?.name ?? "");
-  const [gameSystem, setGameSystem] = useState<LookupOption | null>(() => {
-    if (initialValues?.gameSystemID) {
-      return {
-        id: initialValues.gameSystemID,
-        name: initialValues.gameSystemName ?? initialValues.gameSystemID,
-      };
-    }
-    return null;
-  });
-  const [parentFaction, setParentFaction] = useState<LookupOption | null>(
-    () => {
-      if (initialValues?.parentFactionID) {
-        return {
-          id: initialValues.parentFactionID,
-          name:
-            initialValues.parentFactionName ?? initialValues.parentFactionID,
-        };
+  const defaultValues: FactionFormValues = {
+    name: "",
+    gameSystemID: null,
+    parentFactionID: null,
+    visibility: "private",
+  };
+
+  const { values, setValue, hasChanges, getCreatePayload, getUpdatePayload } =
+    useFormChanges<FactionFormValues>({
+      initialValues:
+        mode === "edit" && initialValues
+          ? {
+              name: initialValues.name ?? "",
+              gameSystemID: initialValues.gameSystemID ?? null,
+              parentFactionID: initialValues.parentFactionID ?? null,
+              visibility: initialValues.visibility ?? "private",
+            }
+          : defaultValues,
+    });
+
+  // Derive LookupOption objects from hook values
+  const gameSystem: LookupOption | null = values.gameSystemID
+    ? {
+        id: values.gameSystemID,
+        name: initialValues?.gameSystemName ?? values.gameSystemID,
       }
-      return null;
-    },
-  );
-  const [visibility, setVisibility] = useState<CatalogItemVisibility>(
-    initialValues?.visibility ?? "private",
-  );
+    : null;
+
+  const parentFaction: LookupOption | null = values.parentFactionID
+    ? {
+        id: values.parentFactionID,
+        name: initialValues?.parentFactionName ?? values.parentFactionID,
+      }
+    : null;
 
   const [nameError, setNameError] = useState<string | null>(null);
   const dialogTitle = mode === "create" ? m.createTitle : m.editTitle;
@@ -87,9 +97,7 @@ export function FactionFormDialog({
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
-    const trimmedName = name.trim();
-    const trimmedGameSystemID = gameSystem?.id.trim() ?? "";
-    const trimmedParentFactionID = parentFaction?.id.trim() ?? "";
+    const trimmedName = values.name.trim();
 
     let hasError = false;
 
@@ -102,12 +110,9 @@ export function FactionFormDialog({
 
     if (hasError) return;
 
-    onSave({
-      name: trimmedName,
-      gameSystemID: trimmedGameSystemID || null,
-      parentFactionID: trimmedParentFactionID || null,
-      visibility,
-    });
+    setValue("name", trimmedName);
+    const payload = mode === "create" ? getCreatePayload() : getUpdatePayload();
+    onSave(payload);
   };
 
   const isFormDisabled = isPending;
@@ -125,8 +130,8 @@ export function FactionFormDialog({
           <TextField
             label={m.nameLabel}
             placeholder={m.namePlaceholder}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            value={values.name}
+            onChange={(event) => setValue("name", event.target.value)}
             fullWidth
             disabled={isFormDisabled}
             error={Boolean(nameError)}
@@ -138,7 +143,7 @@ export function FactionFormDialog({
             label={m.gameSystemLabel}
             placeholder={m.gameSystemPlaceholder}
             value={gameSystem}
-            onChange={(option) => setGameSystem(option)}
+            onChange={(option) => setValue("gameSystemID", option?.id || null)}
             fetcher={async (q) => {
               const res = await api.get<{
                 data: { id: string; name: string }[];
@@ -152,7 +157,9 @@ export function FactionFormDialog({
             label={m.parentFactionLabel}
             placeholder={m.parentFactionPlaceholder}
             value={parentFaction}
-            onChange={(option) => setParentFaction(option)}
+            onChange={(option) =>
+              setValue("parentFactionID", option?.id || null)
+            }
             excludeIds={currentFactionId ? [currentFactionId] : undefined}
             fetcher={async (q) => {
               const res = await api.get<{ data: Faction[] }>("/v1/factions", {
@@ -165,10 +172,10 @@ export function FactionFormDialog({
 
           <CatalogItemVisibilityField
             mode={mode}
-            value={visibility}
+            value={values.visibility}
             userRoles={userRoles}
             disabled={isFormDisabled}
-            onChange={setVisibility}
+            onChange={(value) => setValue("visibility", value)}
           />
         </Stack>
       </DialogContent>
@@ -176,7 +183,10 @@ export function FactionFormDialog({
         <Button onClick={onClose} color="secondary" disabled={isFormDisabled}>
           {m.cancel}
         </Button>
-        <Button onClick={handleSubmit} disabled={isFormDisabled}>
+        <Button
+          onClick={handleSubmit}
+          disabled={isFormDisabled || (mode === "edit" && !hasChanges)}
+        >
           {m.save}
         </Button>
       </DialogActions>

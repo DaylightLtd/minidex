@@ -30,7 +30,6 @@ export function LookupDropdown({
   const [loading, setLoading] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const q = debouncedSearch.trim();
     const shouldFetch = q.length === 0 || q.length >= 3;
@@ -39,6 +38,7 @@ export function LookupDropdown({
     }
 
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetcher(q)
       .then((items) => {
@@ -62,7 +62,6 @@ export function LookupDropdown({
       cancelled = true;
     };
   }, [debouncedSearch, excludeIds, fetcher, value]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const mergedOptions = useMemo(() => {
     if (

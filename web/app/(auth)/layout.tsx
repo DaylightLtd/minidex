@@ -129,13 +129,12 @@ export default function AuthenticatedLayout({
   const displayName = profile?.displayName ?? m.user;
   const isAdmin = user?.roles.includes("admin") ?? false;
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (isMobile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMobileOpen(false);
     }
   }, [pathname, isMobile]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   function handleAvatarClick(event: React.MouseEvent<HTMLElement>) {
     setMenuAnchor(event.currentTarget);

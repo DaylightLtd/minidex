@@ -26,7 +26,10 @@ import { enqueueSnackbar } from "notistack";
 import { useMemo, useState } from "react";
 
 import { CatalogItemRowActions } from "@/app/(auth)/catalog/components/CatalogItemRowActions";
-import { FactionFormDialog } from "@/app/(auth)/catalog/factions/components/FactionFormDialog";
+import {
+  FactionFormDialog,
+  type FactionFormValues,
+} from "@/app/(auth)/catalog/factions/components/FactionFormDialog";
 import {
   type CatalogItemVisibility,
   type Faction,
@@ -89,11 +92,7 @@ export default function FactionsPage() {
     Faction,
     {
       id?: string;
-      name: string;
-      gameSystemID: string | null;
-      parentFactionID: string | null;
-      visibility: CatalogItemVisibility;
-    }
+    } & (FactionFormValues | Partial<FactionFormValues>)
   >({
     method: (variables) => (variables.id ? "patch" : "post"),
     path: (variables) =>
@@ -167,12 +166,9 @@ export default function FactionsPage() {
     setFormDialog(null);
   };
 
-  const handleFormSave = (values: {
-    name: string;
-    gameSystemID: string | null;
-    parentFactionID: string | null;
-    visibility: CatalogItemVisibility;
-  }) => {
+  const handleFormSave = (
+    values: FactionFormValues | Partial<FactionFormValues>,
+  ) => {
     saveMutation.mutate({
       ...(formDialog?.mode === "edit" && formDialog.faction
         ? { id: formDialog.faction.id }
