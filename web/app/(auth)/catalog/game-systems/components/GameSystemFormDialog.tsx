@@ -9,7 +9,7 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo } from "react";
 
 import { CatalogItemVisibilityField } from "@/app/(auth)/catalog/components/CatalogItemVisibilityField";
 import { type CatalogItemVisibility } from "@/app/(auth)/catalog/game-systems/hooks/use-game-systems";
@@ -70,14 +70,18 @@ export function GameSystemFormDialog({
     [mode, initialValues],
   );
 
-  const { values, setValue, hasChanges, getCreatePayload, getUpdatePayload } =
-    useFormChanges<GameSystemFormValues>({
-      initialValues: initialFormValues,
-    });
-
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [websiteError, setWebsiteError] = useState<string | null>(null);
-  const [releaseYearError, setReleaseYearError] = useState<string | null>(null);
+  const {
+    values,
+    setValue,
+    hasChanges,
+    getCreatePayload,
+    getUpdatePayload,
+    errors,
+    setError,
+    clearErrors,
+  } = useFormChanges<GameSystemFormValues>({
+    initialValues: initialFormValues,
+  });
 
   const dialogTitle = mode === "create" ? m.createTitle : m.editTitle;
 
@@ -90,29 +94,29 @@ export function GameSystemFormDialog({
     let hasError = false;
 
     if (!trimmedName) {
-      setNameError(m.nameRequired);
+      setError("name", m.nameRequired);
       hasError = true;
     } else {
-      setNameError(null);
+      setError("name", null);
     }
 
     if (trimmedWebsite && !isValidUrl(trimmedWebsite)) {
-      setWebsiteError(m.websiteError);
+      setError("website", m.websiteError);
       hasError = true;
     } else {
-      setWebsiteError(null);
+      setError("website", null);
     }
 
     if (values.releaseYear !== null) {
       const yearNumber = Number(values.releaseYear);
       if (!Number.isInteger(yearNumber) || yearNumber <= 0) {
-        setReleaseYearError(m.releaseYearError);
+        setError("releaseYear", m.releaseYearError);
         hasError = true;
       } else {
-        setReleaseYearError(null);
+        setError("releaseYear", null);
       }
     } else {
-      setReleaseYearError(null);
+      setError("releaseYear", null);
     }
 
     if (hasError) return;
@@ -141,8 +145,8 @@ export function GameSystemFormDialog({
             onChange={(event) => setValue("name", event.target.value)}
             fullWidth
             disabled={isFormDisabled}
-            error={Boolean(nameError)}
-            helperText={nameError}
+            error={Boolean(errors.name)}
+            helperText={errors.name}
             InputLabelProps={{ shrink: true, required: true }}
           />
 
@@ -169,8 +173,8 @@ export function GameSystemFormDialog({
             fullWidth
             type="number"
             disabled={isFormDisabled}
-            error={Boolean(releaseYearError)}
-            helperText={releaseYearError}
+            error={Boolean(errors.releaseYear)}
+            helperText={errors.releaseYear}
             InputLabelProps={{ shrink: true, required: false }}
           />
 
@@ -183,8 +187,8 @@ export function GameSystemFormDialog({
             }
             fullWidth
             disabled={isFormDisabled}
-            error={Boolean(websiteError)}
-            helperText={websiteError}
+            error={Boolean(errors.website)}
+            helperText={errors.website}
             InputLabelProps={{ shrink: true, required: false }}
           />
 
