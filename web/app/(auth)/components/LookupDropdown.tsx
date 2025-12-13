@@ -1,8 +1,9 @@
 "use client";
 
 import { Autocomplete, CircularProgress, TextField } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 export type LookupOption = { id: string; name: string };
 
@@ -14,6 +15,7 @@ type LookupDropdownProps = {
   fetcher: (query: string) => Promise<LookupOption[]>;
   disabled?: boolean;
   excludeIds?: string[];
+  queryKeyPrefix: string;
 };
 
 export function LookupDropdown({
@@ -24,61 +26,46 @@ export function LookupDropdown({
   fetcher,
   disabled,
   excludeIds,
+  queryKeyPrefix,
 }: LookupDropdownProps) {
   const [search, setSearch] = useState(value?.name ?? "");
-  const [options, setOptions] = useState<LookupOption[]>([]);
-  const [loading, setLoading] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
-  useEffect(() => {
-    const q = debouncedSearch.trim();
-    const shouldFetch = q.length === 0 || q.length >= 3;
-    if (!shouldFetch) {
-      return;
-    }
+  const q = debouncedSearch.trim();
+  const shouldFetch = q.length === 0 || q.length >= 3;
 
-    let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    fetcher(q)
-      .then((items) => {
-        if (!cancelled) {
-          const filtered = items.filter(
-            (item) =>
-              !excludeIds?.includes(item.id) &&
-              (!value || item.id !== value.id),
-          );
-          setOptions(filtered);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setOptions([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+  const { data: rawOptions = [], isLoading } = useQuery({
+    queryKey: [queryKeyPrefix, q, excludeIds?.sort()?.join(",")],
+    queryFn: () => fetcher(q),
+    enabled: shouldFetch,
+    staleTime: 5 * 60 * 1000,
+  });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [debouncedSearch, excludeIds, fetcher, value]);
+  const filteredOptions = useMemo(
+    () =>
+      rawOptions.filter(
+        (item) =>
+          !excludeIds?.includes(item.id) && (!value || item.id !== value.id),
+      ),
+    [rawOptions, excludeIds, value],
+  );
 
   const mergedOptions = useMemo(() => {
     if (
       value &&
       !excludeIds?.includes(value.id) &&
-      !options.some((o) => o.id === value.id)
+      !filteredOptions.some((o) => o.id === value.id)
     ) {
-      return [{ id: value.id, name: value.name }, ...options];
+      return [{ id: value.id, name: value.name }, ...filteredOptions];
     }
-    return options;
-  }, [excludeIds, options, value]);
+    return filteredOptions;
+  }, [excludeIds, filteredOptions, value]);
 
   return (
     <Autocomplete
       options={mergedOptions}
       getOptionLabel={(option) => option.name}
-      loading={loading}
+      loading={isLoading}
       value={
         value ? (mergedOptions.find((o) => o.id === value.id) ?? value) : null
       }
@@ -100,7 +87,7 @@ export function LookupDropdown({
             ...params.InputProps,
             endAdornment: (
               <>
-                {loading ? (
+                {isLoading ? (
                   <CircularProgress color="inherit" size={20} />
                 ) : null}
                 {params.InputProps.endAdornment}
